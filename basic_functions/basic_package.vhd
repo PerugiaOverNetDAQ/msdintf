@@ -77,8 +77,10 @@ package basic_package is
     generic(pPOLARITY : std_logic);
     port(iCLK, iRST, iEN : in  std_logic;
        oCLK_OUT, oCLK_OUT_RISING, oCLK_OUT_FALLING : out std_logic;
-       iFREQ_DIV   : in  std_logic_vector(15 downto 0));
+       iFREQ_DIV   : in  std_logic_vector(15 downto 0);
+	    iDUTY_CYCLE : in std_logic_vector(15 downto 0));
   end component;
+  
   -- parametric_fifo_synch -----------------------------------------------------
   component parametric_fifo_synch is
     generic(pWIDTH, pDEPTH, pUSEDW_WIDTH : natural;
@@ -108,20 +110,13 @@ package basic_package is
       oQ        : out std_logic_vector(pWIDTHR-1 downto 0)
       );
   end component;
-  -- ALTIOBUF  -----------------------------------------------------------------
-  component differential_rx is
-    generic(pWIDTH : natural := 1);
-    port(iDATAp : in  std_logic_vector (pWIDTH-1 downto 0);
-      iDATAn : in  std_logic_vector (pWIDTH-1 downto 0);
-      oQ     : out std_logic_vector (pWIDTH-1 downto 0));
-  end component;
-
+  
  component STD_FIFO is
  Generic (
 		constant DATA_WIDTH  : natural;
 		constant FIFO_DEPTH	: natural
 	);
-	Port (
+	Port ( 
 		CLK		: in  STD_LOGIC;
 		RST		: in  STD_LOGIC;
 		WriteEn	: in  STD_LOGIC;
@@ -131,8 +126,8 @@ package basic_package is
 		Empty	: out STD_LOGIC;
 		Full	: out STD_LOGIC
 	);
-
-end component;
+ 
+end component;  
   -- pulse_generator -----------------------------------------------------------
   component pulse_generator is
     generic(pPOLARITY : std_logic;
