@@ -21,15 +21,9 @@ entity Data_Builder_Top is
     -- control interface
     iEN          : in  std_logic;       --!Enable
     iTRIG        : in  std_logic;       --!External trigger
-    oCNT         : out tControlIntfOut;     --!Control signals in output
-    oCAL_TRIG    : out std_logic;
-    iFE_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!FE SlowClock divider
-    iADC_CLK_DIV : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
-    iFE_CLK_DUTY : in  std_logic_vector(15 downto 0);  --!FE SlowClock duty cycle
-    --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
-    iCFG_PLANE   : in  std_logic_vector(15 downto 0);  --!uSTRIP configurations
-    iTRG_PERIOD  : in  std_logic_vector(15 downto 0);  --!Clock-cycles between two triggers
-    iTRG2HOLD    : in  std_logic_vector(15 downto 0);  --!Clock-cycles between an external trigger and the FE-HOLD signal
+    oCNT         : out tControlIntfOut; --!Control signals in output
+    oCAL_TRIG    : out std_logic;       --!Internal trigger output
+    iMSD_CONFIG  : in  msd_config;      --!Configuration from the control registers
     -- First FE-ADC chain ports
     oFE0         : out tFpga2FeIntf;    --!Output signals to the FE1
     oADC0        : out tFpga2AdcIntf;   --!Output signals to the ADC1
@@ -71,12 +65,6 @@ architecture std of Data_Builder_Top is
   signal sExtTrigDel     : std_logic;
   signal sCalTrig        : std_logic;
   signal sExtTrigDelBusy : std_logic;
-  signal siFE_CLK_DUTY   : std_logic_vector(15 downto 0);
-  signal siCFG_PLANE     : std_logic_vector(15 downto 0);
-  signal siTRG_PERIOD    : std_logic_vector(15 downto 0);
-  signal siTRG2HOLD      : std_logic_vector(15 downto 0);
-  signal siFE_CLK_DIV    : std_logic_vector(15 downto 0);
-  signal siADC_CLK_DIV   : std_logic_vector(15 downto 0);
 
 
 begin
@@ -99,14 +87,8 @@ begin
   oADC0         <= soADC0;
   oADC1         <= soADC1;
 
-  siTRG_PERIOD  <= iTRG_PERIOD;
-  siTRG2HOLD    <= iTRG2HOLD;
-  siFE_CLK_DIV  <= iFE_CLK_DIV;
-  siADC_CLK_DIV <= iADC_CLK_DIV;
-  
-
-  sHpCfg   <= iCFG_PLANE(3 downto 0);
-  sTrigInt <= iCFG_PLANE(4);
+  sHpCfg   <= iMSD_CONFIG.cfgPlane(3 downto 0);
+  sTrigInt <= iMSD_CONFIG.cfgPlane(4);
 
   sCntIn.en    <= iEN;
   sCntIn.start <= sCalTrig when sTrigInt = '1' else
@@ -119,6 +101,7 @@ begin
   --!@todo Also the Cal triggers have to be delayed as the external trigger?
   cal_trigger_gen : pulse_generator
     generic map(
+      pWIDTH    => 32,
       pPOLARITY => '1',
       pLENGTH   => 1
       ) port map(
@@ -128,7 +111,7 @@ begin
         oPULSE         => sCalTrig,
         oPULSE_RISING  => open,
         oPULSE_FALLING => open,
-        iPERIOD        => siTRG_PERIOD
+        iPERIOD        => iMSD_CONFIG.intTrgPeriod
         );
 
   --!@brief Delay the external trigger before the FE start
@@ -137,7 +120,7 @@ begin
       iCLK   => sCLK,
       iRST   => sRST,
       iSTART => siTRIG,
-      iDELAY => siTRG2HOLD,
+      iDELAY => iMSD_CONFIG.trg2Hold,
       oBUSY  => sExtTrigDelBusy,
       oOUT   => sExtTrigDel
       );
@@ -151,21 +134,23 @@ begin
       iCLK         => sCLK,             --!Main clock
       iRST         => sRST,             --!Main reset
       -- control interface
-      oCNT         => sCntOut,
-      iCNT         => sCntIn,           --!Control signals in output
-      iFE_CLK_DIV  => siFE_CLK_DIV,
-      iADC_CLK_DIV => siADC_CLK_DIV,
-      iCFG_FE      => sHpCfg,
+      oCNT          => sCntOut,
+      iCNT          => sCntIn,                  --!Control signals in output
+      iFE_CLK_DIV   => iMSD_CONFIG.feClkDiv,    --!FE SlowClock divider
+      iFE_CLK_DUTY  => iMSD_CONFIG.feClkDuty,   --!FE SlowClock duty cycle
+      iADC_CLK_DIV  => iMSD_CONFIG.adcClkDiv,   --!ADC SlowClock divider
+      iADC_CLK_DUTY => iMSD_CONFIG.adcClkDuty,  --!ADC SlowClock divider
+      iCFG_FE       => sHpCfg,                  --!FE configurations
       -- FE interface
-      oFE0         => soFE0,            --!Output signals to the FE1
-      oFE1         => soFE1,            --!Input signals from the FE1
-      iFE          => siFE,             --!Input signals from the FE2
+      oFE0         => soFE0,  --!Output signals to the FE1
+      oFE1         => soFE1,  --!Input signals from the FE1
+      iFE          => siFE,   --!Input signals from the FE2
       -- ADC interface
-      oADC0        => soADC0,           --!Output signals to the ADC2
-      oADC1        => soADC1,           --!Output signals to the ADC1
-      iMULTI_ADC   => siMULTI_ADC,      --!Input signals from the ADC1
+      oADC0        => soADC0,       --!Output signals to the ADC2
+      oADC1        => soADC1,       --!Output signals to the ADC1
+      iMULTI_ADC   => siMULTI_ADC,  --!Input signals from the ADC1
       -- FIFO output interface
-      oMULTI_FIFO  => soMULTI_FIFO,     --!Output interface of a FIFO1
+      oMULTI_FIFO  => soMULTI_FIFO, --!Output interface of a FIFO1
       iMULTI_FIFO  => siMULTI_FIFO  --!Input interface of a FIFO1   -----define
       );
 

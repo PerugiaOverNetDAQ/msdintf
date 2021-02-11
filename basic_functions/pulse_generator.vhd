@@ -13,6 +13,8 @@ use ieee.std_logic_unsigned.all;
 --!generate also the RISING and FALLING edges
 entity pulse_generator is
   generic(
+    --!Counter width
+    pWIDTH    : natural := 32;
     --!Polarity of the pulse
     pPOLARITY : std_logic := '1';
     --!Length of the pulse
@@ -32,13 +34,13 @@ entity pulse_generator is
     --!Falling edge of the pulse; synchronous to the edge
     oPULSE_FALLING  : out std_logic;
     --!Pulse duration (in number of iCLK cycles)
-    iPERIOD         : in  std_logic_vector(15 downto 0)
+    iPERIOD         : in  std_logic_vector(pWIDTH-1 downto 0)
   );
 end pulse_generator;
 
 architecture Behavioral of pulse_generator is
-  signal sSlvEnable   : std_logic_vector(15 downto 0):= (others=>'0');
-  signal sCounter     : std_logic_vector(15 downto 0):= (others=>'0');
+  signal sSlvEnable   : std_logic_vector(pWIDTH-1 downto 0):= (others=>'0');
+  signal sCounter     : std_logic_vector(pWIDTH-1 downto 0):= (others=>'0');
   signal sPulse       : std_logic:= '0';
   signal sPulseDelay  : std_logic:= '0';
   signal sRstCnt      : std_logic:= '0';
@@ -48,7 +50,7 @@ architecture Behavioral of pulse_generator is
 begin
 
   sSlvEnable(0)           <= iEN;
-  sSlvEnable(15 downto 1) <= (others => '0');
+  sSlvEnable(pWIDTH-1 downto 1) <= (others => '0');
   --!@brief Counter that increments at each cycle
   --!@test Summing sSlvEnable could add combinatorial length to the path
   --!@param[in]  iCLK  Clock, used on rising edge

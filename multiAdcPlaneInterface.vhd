@@ -24,11 +24,13 @@ entity multiAdcPlaneInterface is
     iCLK         : in  std_logic;       --!Main clock
     iRST         : in  std_logic;       --!Main reset
     -- control interface
-    oCNT         : out tControlIntfOut;     --!Control signals in output
-    iCNT         : in  tControlIntfIn;  --!Control signals in input
-    iFE_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!FE SlowClock divider
-    iADC_CLK_DIV : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
-    iCFG_FE      : in  std_logic_vector(3 downto 0);   --!FE configurations
+    oCNT          : out tControlIntfOut;     --!Control signals in output
+    iCNT          : in  tControlIntfIn;  --!Control signals in input
+    iFE_CLK_DIV   : in  std_logic_vector(15 downto 0);  --!FE SlowClock divider
+    iFE_CLK_DUTY  : in  std_logic_vector(15 downto 0);  --!FE SlowClock duty cycle
+    iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
+    iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
+    iCFG_FE       : in  std_logic_vector(3 downto 0);   --!FE configurations
     -- FE interface
     oFE0         : out tFpga2FeIntf;    --!Output signals to the FE0
     oFE1         : out tFpga2FeIntf;    --!Output signals to the FE1
@@ -68,9 +70,6 @@ architecture std of multiAdcPlaneInterface is
   signal sAdcSlwEn            : std_logic;
   signal sAdcSlwRst           : std_logic;
 
-  signal siFE_CLK_DIV  : std_logic_vector(15 downto 0);
-  signal siADC_CLK_DIV : std_logic_vector(15 downto 0);
-  
 
   -- FSM signals
   type tHpState is (RESET, WAIT_RESET, IDLE, START_HP_READING, FE_EDGE,
@@ -82,9 +81,6 @@ begin
   -- Combinatorial assignments -------------------------------------------------
   oCNT          <= sCntOut;
   sCntIn        <= iCNT;
-  siFE_CLK_DIV  <= iFE_CLK_DIV;
-  siADC_CLK_DIV <= iADC_CLK_DIV;
-
 
   oMULTI_FIFO <= sFifoOut;
 
@@ -107,11 +103,11 @@ begin
       iCLK             => iCLK,
       iRST             => sFeSlwRst,
       iEN              => sFeSlwEn,
-      iFREQ_DIV        => siFE_CLK_DIV,
+      iFREQ_DIV        => iFE_CLK_DIV,
+      iDUTY_CYCLE      => iFE_CLK_DUTY
       oCLK_OUT         => sFeICnt.slwClk,
       oCLK_OUT_RISING  => sFeCdRis,
-      oCLK_OUT_FALLING => sFeCdFal,
-		iDUTY_CYCLE      => cFE_CLK_DUTY
+      oCLK_OUT_FALLING => sFeCdFal
       );
 
   sAdcICnt.slwEn <= sAdcCdFal when (pACTIVE_EDGE = "F") else
@@ -125,11 +121,11 @@ begin
       iCLK             => iCLK,
       iRST             => sAdcSlwRst,
       iEN              => sAdcSlwEn,
-      iFREQ_DIV        => siADC_CLK_DIV,
+      iFREQ_DIV        => iADC_CLK_DIV,
+      iDUTY_CYCLE      => iADC_CLK_DUTY
       oCLK_OUT         => sAdcICnt.slwClk,
       oCLK_OUT_RISING  => sAdcCdRis,
-      oCLK_OUT_FALLING => sAdcCdFal,
-		iDUTY_CYCLE      => cADC_CLK_DUTY
+      oCLK_OUT_FALLING => sAdcCdFal
       );
   ------------------------------------------------------------------------------
 

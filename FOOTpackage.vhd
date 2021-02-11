@@ -26,47 +26,13 @@ package FOOTpackage is
 
   constant cFE_CLK_DIV   : std_logic_vector(15 downto 0) := int2slv(360, 16);  --!FE SlowClock divider
   constant cADC_CLK_DIV  : std_logic_vector(15 downto 0) := int2slv(18, 16);  --!ADC SlowClock divider
-  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0)  := int2slv(7, 16);
-  constant cADC_CLK_DUTY : std_logic_vector(15 downto 0)  := int2slv(4, 16);
-  constant cCFG_PLANE    : std_logic_vector(15 downto 0) := "0000000000011111";
-  constant cTRG_PERIOD   : std_logic_vector(15 downto 0) := int2slv(1000, 16);
-  constant cTRG2HOLD     : std_logic_vector(15 downto 0) := int2slv(325, 16);
+  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(7, 16); --!FE SlowClock duty cycle
+  constant cADC_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(4, 16); --!ADC SlowClock duty cycle
+  --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
+  constant cCFG_PLANE    : std_logic_vector(15 downto 0) := x"000F"; --!uStrip configurations
+  constant cTRG_PERIOD   : std_logic_vector(31 downto 0) := x"0000FFFF"; --!Clock cycles between two internal triggers
+  constant cTRG2HOLD     : std_logic_vector(15 downto 0) := int2slv(325, 16); --!Clock-cycles between an external trigger and the FE-HOLD signal
 
-
-  --constant Trigger_Pin            : natural := 27;
-  --constant Reset_Button           : natural := 0;
-  --constant Enable_Switch          : natural := 0;
-  constant Internal_Trigger_pin : natural := 16;
-  
-  constant Hold_pin_hp1         : natural := 4;
-  constant Drst_pin_hp1         : natural := 2;
-  constant ShiftIn_pin_hp1      : natural := 8;
-  constant Clk_pin_hp1          : natural := 12;
-  constant TestOn_pin_hp1       : natural := 0;
-  
-  constant Hold_pin_hp2         : natural := 5;
-  constant Drst_pin_hp2         : natural := 1;
-  constant ShiftIn_pin_hp2      : natural := 11;
-  constant Clk_pin_hp2          : natural := 13;
-  constant TestOn_pin_hp2       : natural := 3;
-  
-  constant SClk_pin_hp1         : natural := 24;
-  constant Cs_pin_hp1           : natural := 22;
-  
-  constant SClk_pin_hp2         : natural := 25;
-  constant Cs_pin_hp2           : natural := 23;
-  
-  constant ADC1_Data            : natural := 26;
-  constant ADC2_Data            : natural := 28;
-  constant ADC3_Data            : natural := 30;
-  constant ADC4_Data            : natural := 32;
-  constant ADC5_Data            : natural := 34;
-  
-  constant ADC6_Data            : natural := 27;
-  constant ADC7_Data            : natural := 29;
-  constant ADC8_Data            : natural := 31;
-  constant ADC9_Data            : natural := 33;
-  constant ADC10_Data           : natural := 35;
 
 
   type fifo_type is array (0 to TOTAL_ADC_WORDS_NUM - 1)of std_logic_vector((2* cTOTAL_ADCs * cADC_DATA_WIDTH) - 1 downto 0);
@@ -177,7 +143,16 @@ package FOOTpackage is
     full   : std_logic;                 --!Full
   end record tAllFifoOut_ADC;
 
-
+  type msd_config is record
+    feClkDuty    : std_logic_vector(15 downto 0); --!FE slowClock duty cycle
+    feClkDiv     : std_logic_vector(15 downto 0); --!FE slowClock divider
+    adcClkDuty   : std_logic_vector(15 downto 0); --!ADC slowClock duty cycle
+    adcClkDiv    : std_logic_vector(15 downto 0); --!ADC slowClock divider
+    --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
+    cfgPlane     : std_logic_vector(15 downto 0); --!uStrip configuration
+    intTrgPeriod : std_logic_vector(31 downto 0); --!Clock-cycles between two internal triggers
+    trg2Hold     : std_logic_vector(15 downto 0); --!Clock-cycles between an external trigger and the FE-HOLD signal
+  end record msd_config;
 
 
   --!Multiple AD7276A ADCs output signals and FIFOs
@@ -327,9 +302,11 @@ package FOOTpackage is
       iRST         : in  std_logic;     --!Main reset
       oCNT         : out tControlIntfOut;     --!Control signals in output
       iCNT         : in  tControlIntfIn;      --!Control signals in input
-      iFE_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!FE SlowClock divider
-      iADC_CLK_DIV : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
-      iCFG_FE      : in  std_logic_vector(3 downto 0);   --!FE configurations
+      iFE_CLK_DIV   : in  std_logic_vector(15 downto 0);  --!FE SlowClock divider
+      iFE_CLK_DUTY  : in  std_logic_vector(15 downto 0);  --!FE SlowClock duty cycle
+      iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
+      iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
+      iCFG_FE       : in  std_logic_vector(3 downto 0);   --!FE configurations
       --# {{FE Interface}}
       oFE0         : out tFpga2FeIntf;  --!Output signals to the FE0
       oFE1         : out tFpga2FeIntf;  --!Output signals to the FE1
@@ -354,14 +331,8 @@ package FOOTpackage is
       iEN          : in  std_logic;       --!Enable
       iTRIG        : in  std_logic;       --!External trigger
       oCNT         : out tControlIntfOut; --!Control signals in output-- still to decide where to connect it!!!!!
-      oCAL_TRIG    : out std_logic;
-      iFE_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!FE SlowClock divider
-      iADC_CLK_DIV : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
-      iFE_CLK_DUTY : in  std_logic_vector(15 downto 0);  --!FE SlowClock duty cycle
-      --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
-      iCFG_PLANE   : in  std_logic_vector(15 downto 0);  --!uSTRIP configurations
-      iTRG_PERIOD  : in  std_logic_vector(15 downto 0);  --!Clock-cycles between two triggers
-      iTRG2HOLD    : in  std_logic_vector(15 downto 0);  --!Clock-cycles between an external trigger and the FE-HOLD signal
+      oCAL_TRIG    : out std_logic; --!Internal trigger output
+      iMSD_CONFIG  : in  msd_config;  --!Configuration from the control registers
       --# {{First FE-ADC chain Interface}}
       oFE0         : out tFpga2FeIntf;        --!Output signals to the FE1
       oADC0        : out tFpga2AdcIntf;       --!Output signals to the ADC1
