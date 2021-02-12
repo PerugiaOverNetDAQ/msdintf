@@ -29,44 +29,9 @@ package FOOTpackage is
   constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0)  := int2slv(7, 16);
   constant cADC_CLK_DUTY : std_logic_vector(15 downto 0)  := int2slv(4, 16);
   constant cCFG_PLANE    : std_logic_vector(15 downto 0) := "0000000000011111";
-  constant cTRG_PERIOD   : std_logic_vector(15 downto 0) := int2slv(1000, 16);
+  constant cTRG_PERIOD   : std_logic_vector(15 downto 0) := x"ffff";
   constant cTRG2HOLD     : std_logic_vector(15 downto 0) := int2slv(325, 16);
 
-
-  --constant Trigger_Pin            : natural := 27;
-  --constant Reset_Button           : natural := 0;
-  --constant Enable_Switch          : natural := 0;
-  constant Internal_Trigger_pin : natural := 16;
-  
-  constant Hold_pin_hp1         : natural := 4;
-  constant Drst_pin_hp1         : natural := 2;
-  constant ShiftIn_pin_hp1      : natural := 8;
-  constant Clk_pin_hp1          : natural := 12;
-  constant TestOn_pin_hp1       : natural := 0;
-  
-  constant Hold_pin_hp2         : natural := 5;
-  constant Drst_pin_hp2         : natural := 1;
-  constant ShiftIn_pin_hp2      : natural := 11;
-  constant Clk_pin_hp2          : natural := 13;
-  constant TestOn_pin_hp2       : natural := 3;
-  
-  constant SClk_pin_hp1         : natural := 24;
-  constant Cs_pin_hp1           : natural := 22;
-  
-  constant SClk_pin_hp2         : natural := 25;
-  constant Cs_pin_hp2           : natural := 23;
-  
-  constant ADC1_Data            : natural := 26;
-  constant ADC2_Data            : natural := 28;
-  constant ADC3_Data            : natural := 30;
-  constant ADC4_Data            : natural := 32;
-  constant ADC5_Data            : natural := 34;
-  
-  constant ADC6_Data            : natural := 27;
-  constant ADC7_Data            : natural := 29;
-  constant ADC8_Data            : natural := 31;
-  constant ADC9_Data            : natural := 33;
-  constant ADC10_Data           : natural := 35;
 
 
   type fifo_type is array (0 to TOTAL_ADC_WORDS_NUM - 1)of std_logic_vector((2* cTOTAL_ADCs * cADC_DATA_WIDTH) - 1 downto 0);

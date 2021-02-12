@@ -1,10 +1,9 @@
 --!@file clock_divider.vhd
---!@file clock_divider.vhd
 --!@brief Divide the input clock to a slower clock
 --!@author Mattia Barbanera, mattia.barbanera@infn.it
 --!@author Hikmat Nasimi, hikmat.nasimi@pi.infn.it
 --!@date 10/08/2017
---!@version 1.0 - 13/01/2021 Keida Kanxheri - Added duty cycle port 
+--!@version 1.0 - 13/01/2021 Keida Kanxheri - Added duty cycle port
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -36,7 +35,7 @@ entity clock_divider is
         oCLK_OUT_FALLING    : out std_logic;
         --!Slow clock duration (in number of iCLK cycles)
         iFREQ_DIV           : in  std_logic_vector(15 downto 0);
-        iDUTY_CYCLE         : in std_logic_vector(15 downto 0)--- from 1 to 9 corrisponding 10% to 90%
+        iDUTY_CYCLE         : in std_logic_vector(15 downto 0)--- from 1 to 8 corrisponding 12.5% to 100%
     );
 end clock_divider;
 
@@ -50,30 +49,29 @@ architecture Behavioral of clock_divider is
     signal enable_slv           : std_logic_vector(15 downto 0) :=(others => '0');
 	 signal siFREQ_DIV           : unsigned (15 downto 0);
 	 signal siDUTY_CYCLE         : unsigned (15 downto 0);
-	 
-	  
+
+
 	 signal cmp : unsigned (28 downto 0);
-	 
+
 	 signal Div_duty : unsigned(31 downto 0);--multiplying the divisor with the duty
-	
-	 
+
+
 begin
 --Dividing the reduced clock_period interval in 8 under intervalls (by shifting of 3 bits) in order to
 --change the clk duty cycle (possible values 12.5%, 25%, 37.5%, 50%, 62.5%, 75%, 87.5%)
+
+
     process(iCLK)
     begin
         if rising_edge(iCLK) then
- 
           siFREQ_DIV   <=   unsigned(iFREQ_DIV);
           siDUTY_CYCLE <=   unsigned(iDUTY_CYCLE);
-  
           Div_duty <= siFREQ_DIV*siDUTY_CYCLE;
-	
           cmp <= "000"& Div_duty(28 downto 3);
-	
+
 	    end if;
 	 end process;
-	
+
 
 
     --!@brief Counter that increments at each cycle
@@ -92,9 +90,6 @@ begin
             end if;
         end if;
     end process freq_down_scale;
-
- 
-
 
     --!@brief Add FFDs to the combinatorial signals
     --! @param[in]  iCLK  Clock, used on rising edge
@@ -119,14 +114,12 @@ begin
                                '0';
 
     freq_divider_reduced    <= iFREQ_DIV - '1';
-	 
+
 	 clk_out                 <= pPOLARITY when unsigned(clk_count) < cmp else  not pPolarity;
-	  
+
     clk_out_rising          <= '1' when (iEN = '1' and (clk_count = freq_divider_reduced )) else
                                '0';
     clk_out_falling         <= '1' when (iEN = '1' and (unsigned(clk_count) = cmp-1)) else
                                '0';
 
-
- 
   end architecture;

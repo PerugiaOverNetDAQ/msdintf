@@ -71,7 +71,6 @@ architecture std of multiAdcPlaneInterface is
   signal siFE_CLK_DIV  : std_logic_vector(15 downto 0);
   signal siADC_CLK_DIV : std_logic_vector(15 downto 0);
   
-
   -- FSM signals
   type tHpState is (RESET, WAIT_RESET, IDLE, START_HP_READING, FE_EDGE,
                     START_ADC_READING, WAIT_FOR_ADC_END, END_HP_READING);
@@ -111,7 +110,7 @@ begin
       oCLK_OUT         => sFeICnt.slwClk,
       oCLK_OUT_RISING  => sFeCdRis,
       oCLK_OUT_FALLING => sFeCdFal,
-		iDUTY_CYCLE      => cFE_CLK_DUTY
+		  iDUTY_CYCLE      => cFE_CLK_DUTY
       );
 
   sAdcICnt.slwEn <= sAdcCdFal when (pACTIVE_EDGE = "F") else
@@ -129,7 +128,7 @@ begin
       oCLK_OUT         => sAdcICnt.slwClk,
       oCLK_OUT_RISING  => sAdcCdRis,
       oCLK_OUT_FALLING => sAdcCdFal,
-		iDUTY_CYCLE      => cADC_CLK_DUTY
+		  iDUTY_CYCLE      => cADC_CLK_DUTY
       );
   ------------------------------------------------------------------------------
 
