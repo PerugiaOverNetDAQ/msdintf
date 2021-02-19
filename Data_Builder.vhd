@@ -12,6 +12,7 @@ use ieee.math_real.all;
 --use work.SERIALIZE_PKG.all;
 use work.basic_package.all;
 use work.FOOtpackage.all;  --file which contain constant and logic values for all the project
+use work.DAQ_Package.all;
 
 --!@brief Combine the ADC 16-bit FIFOs into one output 32-bit FIFO
 entity Data_Builder is
