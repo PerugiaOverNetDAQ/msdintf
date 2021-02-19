@@ -35,7 +35,7 @@ package FOOTpackage is
 
 
 
-  type fifo_type is array (0 to TOTAL_ADC_WORDS_NUM - 1)of std_logic_vector((2* cTOTAL_ADCs * cADC_DATA_WIDTH) - 1 downto 0);
+  type fifo_type is array (0 to cTOTAL_ADC_WORDS_NUM - 1)of std_logic_vector((2* cTOTAL_ADCs * cADC_DATA_WIDTH) - 1 downto 0);
   subtype index_type is natural range fifo_type'range;
 
 

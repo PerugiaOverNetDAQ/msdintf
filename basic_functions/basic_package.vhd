@@ -138,7 +138,7 @@ end component;
     generic(pWIDTH : natural; pPOLARITY : std_logic; pLENGTH   : natural);
     port(iCLK, iRST, iEN  : in  std_logic;
       oPULSE, oPULSE_RISING, oPULSE_FALLING : out std_logic;
-      iPERIOD : in  std_logic_vector(15 downto 0));
+      iPERIOD : in  std_logic_vector(pWIDTH-1 downto 0));
   end component;
   -- delay_timer ---------------------------------------------------------------
   component delay_timer is

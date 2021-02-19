@@ -103,7 +103,7 @@ begin
       iRST             => sFeSlwRst,
       iEN              => sFeSlwEn,
       iFREQ_DIV        => iFE_CLK_DIV,
-      iDUTY_CYCLE      => iFE_CLK_DUTY
+      iDUTY_CYCLE      => iFE_CLK_DUTY,
       oCLK_OUT         => sFeICnt.slwClk,
       oCLK_OUT_RISING  => sFeCdRis,
       oCLK_OUT_FALLING => sFeCdFal
@@ -121,7 +121,7 @@ begin
       iRST             => sAdcSlwRst,
       iEN              => sAdcSlwEn,
       iFREQ_DIV        => iADC_CLK_DIV,
-      iDUTY_CYCLE      => iADC_CLK_DUTY
+      iDUTY_CYCLE      => iADC_CLK_DUTY,
       oCLK_OUT         => sAdcICnt.slwClk,
       oCLK_OUT_RISING  => sAdcCdRis,
       oCLK_OUT_FALLING => sAdcCdFal
