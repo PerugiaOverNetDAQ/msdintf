@@ -15,8 +15,8 @@ use work.basic_package.all;
 --!@brief Constants, components declarations and functions
 package FOOTpackage is
   constant cADC_DATA_WIDTH       : natural := 16;  --!ADC data-width
-  constant cADC_FIFO_DEPTH       : natural := 1024;  --!ADC FIFO number of words
-  constant TOTAL_ADC_WORDS_NUM   : natural := 2048;  --! numero totale massimo di parole da 16 bit nella fifo finale 1280??
+  constant cADC_FIFO_DEPTH       : natural := 256;  --!ADC FIFO number of words
+  constant cTOTAL_ADC_WORDS_NUM   : natural := 2048;  --! numero totale massimo di parole da 16 bit nella fifo finale 1280??
   constant cFE_DAISY_CHAIN_DEPTH : natural := 2;   --!FEs in a daisy chain
   constant cFE_CHANNELS          : natural := 64;  --!Channels per FE
   constant cFE_CLOCK_CYCLES      : natural := cFE_DAISY_CHAIN_DEPTH*cFE_CHANNELS;  --!Number of clock cycles to feed a chain
@@ -24,16 +24,17 @@ package FOOTpackage is
   constant cTOTAL_ADCS           : natural := 10;
 
 
-  constant cFE_CLK_DIV  : std_logic_vector(15 downto 0) := int2slv(360, 16);  --!FE SlowClock divider
-  constant cADC_CLK_DIV : std_logic_vector(15 downto 0) := int2slv(18, 16);  --!ADC SlowClock divider
-  constant cFE_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(480, 16);
-  constant cCFG_PLANE   : std_logic_vector(15 downto 0) := "0000000000011111";
-  constant cTRG_PERIOD  : std_logic_vector(15 downto 0) := int2slv(1000, 16);
-  constant cTRG2HOLD    : std_logic_vector(15 downto 0) := int2slv(325, 16);
+  constant cFE_CLK_DIV   : std_logic_vector(15 downto 0) := int2slv(360, 16);  --!FE SlowClock divider
+  constant cADC_CLK_DIV  : std_logic_vector(15 downto 0) := int2slv(18, 16);  --!ADC SlowClock divider
+  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0)  := int2slv(7, 16);
+  constant cADC_CLK_DUTY : std_logic_vector(15 downto 0)  := int2slv(4, 16);
+  constant cCFG_PLANE    : std_logic_vector(15 downto 0) := "0000000000000111";
+  constant cTRG_PERIOD   : std_logic_vector(15 downto 0) := x"ffff";
+  constant cTRG2HOLD     : std_logic_vector(15 downto 0) := int2slv(325, 16);
 
 
 
-  type fifo_type is array (0 to TOTAL_ADC_WORDS_NUM - 1)of std_logic_vector((2* cTOTAL_ADCs * cADC_DATA_WIDTH) - 1 downto 0);
+  type fifo_type is array (0 to cTOTAL_ADC_WORDS_NUM - 1)of std_logic_vector((2* cTOTAL_ADCs * cADC_DATA_WIDTH) - 1 downto 0);
   subtype index_type is natural range fifo_type'range;
 
 

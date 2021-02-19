@@ -97,7 +97,8 @@ begin
       iFREQ_DIV        => iFE_CLK_DIV,
       oCLK_OUT         => sFeICnt.slwClk,
       oCLK_OUT_RISING  => sFeCdRis,
-      oCLK_OUT_FALLING => sFeCdFal
+      oCLK_OUT_FALLING => sFeCdFal,
+		iDUTY_CYCLE      => cFE_CLK_DUTY
       );
 
   sAdcICnt.slwEn <= sAdcCdFal when (pACTIVE_EDGE = "F") else
@@ -114,7 +115,8 @@ begin
       iFREQ_DIV        => iADC_CLK_DIV,
       oCLK_OUT         => sAdcICnt.slwClk,
       oCLK_OUT_RISING  => sAdcCdRis,
-      oCLK_OUT_FALLING => sAdcCdFal
+      oCLK_OUT_FALLING => sAdcCdFal,
+		iDUTY_CYCLE      => cADC_CLK_DUTY
       );
   ------------------------------------------------------------------------------
 
