@@ -15,8 +15,8 @@ use work.basic_package.all;
 --!@brief Constants, components declarations and functions
 package FOOTpackage is
   constant cADC_DATA_WIDTH       : natural := 16;  --!ADC data-width
-  constant cADC_FIFO_DEPTH       : natural := 1024;  --!ADC FIFO number of words
-  constant TOTAL_ADC_WORDS_NUM   : natural := 2048;  --! numero totale massimo di parole da 16 bit nella fifo finale 1280??
+  constant cADC_FIFO_DEPTH       : natural := 256;  --!ADC FIFO number of words
+  constant cTOTAL_ADC_WORDS_NUM   : natural := 2048;  --! numero totale massimo di parole da 16 bit nella fifo finale 1280??
   constant cFE_DAISY_CHAIN_DEPTH : natural := 2;   --!FEs in a daisy chain
   constant cFE_CHANNELS          : natural := 64;  --!Channels per FE
   constant cFE_CLOCK_CYCLES      : natural := cFE_DAISY_CHAIN_DEPTH*cFE_CHANNELS;  --!Number of clock cycles to feed a chain
@@ -29,7 +29,7 @@ package FOOTpackage is
   constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(7, 16); --!FE SlowClock duty cycle
   constant cADC_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(4, 16); --!ADC SlowClock duty cycle
   --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
-  constant cCFG_PLANE    : std_logic_vector(15 downto 0) := x"000F"; --!uStrip configurations
+  constant cCFG_PLANE    : std_logic_vector(15 downto 0) := x"0007"; --!uStrip configurations
   constant cTRG_PERIOD   : std_logic_vector(31 downto 0) := x"0000FFFF"; --!Clock cycles between two internal triggers
   constant cTRG2HOLD     : std_logic_vector(15 downto 0) := int2slv(325, 16); --!Clock-cycles between an external trigger and the FE-HOLD signal
 

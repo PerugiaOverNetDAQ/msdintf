@@ -110,13 +110,12 @@ package basic_package is
       );
   end component;
   -- ALTIOBUF  -----------------------------------------------------------------
-  component differential_rx is
-    generic(pWIDTH : natural := 1);
-    port(iDATAp : in  std_logic_vector (pWIDTH-1 downto 0);
-      iDATAn : in  std_logic_vector (pWIDTH-1 downto 0);
-      oQ     : out std_logic_vector (pWIDTH-1 downto 0));
-  end component;
-
+component differential_rx is
+  generic(pWIDTH : natural := 1);
+  port(iDATAp : in  std_logic_vector (pWIDTH-1 downto 0);
+       iDATAn : in  std_logic_vector (pWIDTH-1 downto 0);
+       oQ     : out std_logic_vector (pWIDTH-1 downto 0));
+ end component;
  component STD_FIFO is
  Generic (
 		constant DATA_WIDTH  : natural;

@@ -64,18 +64,18 @@ architecture SYN of parametric_fifo_dp is
     );
     port (
       aclr    : in std_logic;
-      data    : in std_logic_vector (15 downto 0);
+      data    : in std_logic_vector (pWIDTHW-1 downto 0);
       rdclk   : in std_logic;
       rdreq   : in std_logic;
       wrclk   : in std_logic;
       wrreq   : in std_logic;
-      q       : out std_logic_vector (31 downto 0);
+      q       : out std_logic_vector (pWIDTHR-1 downto 0);
       rdempty : out std_logic;
       rdfull  : out std_logic;
-      rdusedw : out std_logic_vector (8 downto 0);
+      rdusedw : out std_logic_vector (pUSEDW_WIDTHR-1 downto 0);
       wrempty : out std_logic;
       wrfull  : out std_logic;
-      wrusedw : out std_logic_vector (9 downto 0)
+      wrusedw : out std_logic_vector (pUSEDW_WIDTHW-1 downto 0)
       );
   end component;
 

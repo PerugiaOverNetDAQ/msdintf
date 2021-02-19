@@ -70,7 +70,6 @@ architecture std of multiAdcPlaneInterface is
   signal sAdcSlwEn            : std_logic;
   signal sAdcSlwRst           : std_logic;
 
-
   -- FSM signals
   type tHpState is (RESET, WAIT_RESET, IDLE, START_HP_READING, FE_EDGE,
                     START_ADC_READING, WAIT_FOR_ADC_END, END_HP_READING);
