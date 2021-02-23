@@ -23,13 +23,13 @@ entity Data_Builder_Top is
     iTRIG        : in  std_logic;       --!External trigger
     oCNT         : out tControlIntfOut; --!Control signals in output
     oCAL_TRIG    : out std_logic;       --!Internal trigger output
-    iMSD_CONFIG  : in  msd_config;      --!Configuration from the control registers
+    iMSD_CONFIG  : in  msd_config;   --!Configuration from the control registers
     -- First FE-ADC chain ports
     oFE0         : out tFpga2FeIntf;    --!Output signals to the FE1
     oADC0        : out tFpga2AdcIntf;   --!Output signals to the ADC1
     -- Second FE-ADC chain ports
-    oFE1         : out tFpga2FeIntf;    --!Output signals to the FE2
-    oADC1        : out tFpga2AdcIntf;   --!Output signals to the ADC2
+    oFE1         : out tFpga2FeIntf;        --!Output signals to the FE2
+    oADC1        : out tFpga2AdcIntf;       --!Output signals to the ADC2
     iMULTI_ADC   : in  tMultiAdc2FpgaIntf;  --!Input signals from the ADC1
     --to event builder signals
     oDATA        : out tAllFifoOut_ADC;
@@ -41,14 +41,14 @@ end Data_Builder_Top;
 
 architecture std of Data_Builder_Top is
 
-  signal sCLK         : std_logic;
-  signal sRST         : std_logic;
-  signal sEn          : std_logic;
-  signal sTrigInt     : std_logic;
-  signal sTrigRising  : std_logic;
-  signal soFE0        : tFpga2FeIntf;
-  signal soFE1        : tFpga2FeIntf;
-  signal siFE         : tFe2FpgaIntf;
+  signal sCLK        : std_logic;
+  signal sRST        : std_logic;
+  signal sEn         : std_logic;
+  signal sTrigInt    : std_logic;
+  signal sTrigRising : std_logic;
+  signal soFE0       : tFpga2FeIntf;
+  signal soFE1       : tFpga2FeIntf;
+  signal siFE        : tFe2FpgaIntf;
 
   signal soADC0        : tFpga2AdcIntf;
   signal soADC1        : tFpga2AdcIntf;
@@ -76,15 +76,15 @@ begin
   siMULTI_ADC   <= iMULTI_ADC;
   siFE.ShiftOut <= '1';
 
-  DATA_VALID    <= sDATA_VALID;
-  END_OF_EVENT  <= sEND_OF_EVENT;
-  oDATA         <= soDATA;
-  oCNT          <= sCntOut;
-  oCAL_TRIG     <= sCalTrig;
-  oFE0          <= soFE0;
-  oFE1          <= soFE1;
-  oADC0         <= soADC0;
-  oADC1         <= soADC1;
+  DATA_VALID   <= sDATA_VALID;
+  END_OF_EVENT <= sEND_OF_EVENT;
+  oDATA        <= soDATA;
+  oCNT         <= sCntOut;
+  oCAL_TRIG    <= sCalTrig;
+  oFE0         <= soFE0;
+  oFE1         <= soFE1;
+  oADC0        <= soADC0;
+  oADC1        <= soADC1;
 
   sHpCfg   <= iMSD_CONFIG.cfgPlane(3 downto 0);
   sTrigInt <= iMSD_CONFIG.cfgPlane(4);
@@ -138,27 +138,27 @@ begin
       pACTIVE_EDGE => "F"               --!"F": falling, "R": rising
       )
     port map (
-      iCLK         => sCLK,             --!Main clock
-      iRST         => sRST,             --!Main reset
+      iCLK          => sCLK,            --!Main clock
+      iRST          => sRST,            --!Main reset
       -- control interface
       oCNT          => sCntOut,
-      iCNT          => sCntIn,                  --!Control signals in output
+      iCNT          => sCntIn,          --!Control signals in output
       iFE_CLK_DIV   => iMSD_CONFIG.feClkDiv,    --!FE SlowClock divider
       iFE_CLK_DUTY  => iMSD_CONFIG.feClkDuty,   --!FE SlowClock duty cycle
       iADC_CLK_DIV  => iMSD_CONFIG.adcClkDiv,   --!ADC SlowClock divider
       iADC_CLK_DUTY => iMSD_CONFIG.adcClkDuty,  --!ADC SlowClock divider
-      iCFG_FE       => sHpCfg,                  --!FE configurations
+      iCFG_FE       => sHpCfg,          --!FE configurations
       -- FE interface
-      oFE0         => soFE0,  --!Output signals to the FE1
-      oFE1         => soFE1,  --!Input signals from the FE1
-      iFE          => siFE,   --!Input signals from the FE2
+      oFE0          => soFE0,           --!Output signals to the FE1
+      oFE1          => soFE1,           --!Input signals from the FE1
+      iFE           => siFE,            --!Input signals from the FE2
       -- ADC interface
-      oADC0        => soADC0,       --!Output signals to the ADC2
-      oADC1        => soADC1,       --!Output signals to the ADC1
-      iMULTI_ADC   => siMULTI_ADC,  --!Input signals from the ADC1
+      oADC0         => soADC0,          --!Output signals to the ADC2
+      oADC1         => soADC1,          --!Output signals to the ADC1
+      iMULTI_ADC    => siMULTI_ADC,     --!Input signals from the ADC1
       -- FIFO output interface
-      oMULTI_FIFO  => soMULTI_FIFO, --!Output interface of a FIFO1
-      iMULTI_FIFO  => siMULTI_FIFO  --!Input interface of a FIFO1   -----define
+      oMULTI_FIFO   => soMULTI_FIFO,    --!Output interface of a FIFO1
+      iMULTI_FIFO   => siMULTI_FIFO  --!Input interface of a FIFO1   -----define
       );
 
   --!@brief Collects data from the MSD and assembles them in a single packet
@@ -167,7 +167,7 @@ begin
       iCLK         => sCLK,
       iRST         => sRST,
       iMULTI_FIFO  => soMULTI_FIFO,
-		oMULTI_FIFO  => siMULTI_FIFO,
+      oMULTI_FIFO  => siMULTI_FIFO,
       oDATA        => soDATA,
       DATA_VALID   => sDATA_VALID,
       END_OF_EVENT => sEND_OF_EVENT

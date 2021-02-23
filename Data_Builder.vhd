@@ -20,7 +20,7 @@ entity Data_Builder is
     iCLK         : in  std_logic;
     iRST         : in  std_logic;
     iMULTI_FIFO  : in  tMultiAdcFifoOut;
-	 oMULTI_FIFO  : out tMultiAdcFifoIn;
+    oMULTI_FIFO  : out tMultiAdcFifoIn;
     oDATA        : out tAllFifoOut_ADC;
     DATA_VALID   : out std_logic;
     END_OF_EVENT : out std_logic
@@ -42,7 +42,7 @@ architecture std of Data_Builder is
   signal sCLK           : std_logic;
   signal sRST           : std_logic;
   signal s_end_of_event : std_logic;
-  signal data_detected : std_logic;
+  signal data_detected  : std_logic;
   signal s_used_w       : std_logic_vector(ceil_log2(cTOTAL_ADC_WORDS_NUM)-1 downto 0);
   signal s_used_r       : std_logic_vector(ceil_log2(cTOTAL_ADC_WORDS_NUM/2)-1 downto 0);
 
@@ -56,7 +56,7 @@ architecture std of Data_Builder is
 
 
   type tFsmDB is (RESET, IDLE, PKT_LENGTH, HEADER_1, HEADER_2, HEADER_3, HEADER_4,
-  WRITE_WORD, OUT_VALID, FOOTER_1, FOOTER_2, FOOTER_3, EVENT_END
+                  WRITE_WORD, OUT_VALID, FOOTER_1, FOOTER_2, FOOTER_3, EVENT_END
                   );
   signal state, nextstate : tFsmDB;
 
@@ -78,16 +78,16 @@ begin
   sCLK         <= iCLK;
   sRST         <= iRST;
   data_detected <= not(sFifoIn_o(0).empty or sFifoIn_o(1).empty or sFifoIn_o(2).empty or sFifoIn_o(3).empty
-  or sFifoIn_o(4).empty or sFifoIn_o(5).empty or sFifoIn_o(6).empty or sFifoIn_o(7).empty
-  or sFifoIn_o(8).empty or sFifoIn_o(9).empty);
+                       or sFifoIn_o(4).empty or sFifoIn_o(5).empty or sFifoIn_o(6).empty or sFifoIn_o(7).empty
+                       or sFifoIn_o(8).empty or sFifoIn_o(9).empty);
 
-  data_det_gen:
+  data_det_gen :
 
   for i in 0 to cTOTAL_ADCs-1 generate
 
 
-  oMULTI_FIFO(i).rd <= '1'when data_detected = '1' and state = IDLE else
-                     '0';
+    oMULTI_FIFO(i).rd <= '1'when data_detected = '1' and state = IDLE else
+                         '0';
   end generate data_det_gen;
   ------------------------------------------------------------------------------
 
@@ -144,37 +144,37 @@ begin
         nextstate <= IDLE;
 
       when IDLE =>
-           if (to_integer(unsigned(s_used_w)) > (cTOTAL_ADCs*cFE_CLOCK_CYCLES)-1)then
-       nextstate <= PKT_LENGTH;
-       else
-        if (data_detected = '1')then
-        nextstate <= WRITE_WORD;
-      else
-        nextstate <= IDLE;
+        if (to_integer(unsigned(s_used_w)) > (cTOTAL_ADCs*cFE_CLOCK_CYCLES)-1)then
+          nextstate <= PKT_LENGTH;
+        else
+          if (data_detected = '1')then
+            nextstate <= WRITE_WORD;
+          else
+            nextstate <= IDLE;
+          end if;
         end if;
-    end if;
 
-     when WRITE_WORD =>
-     if (count < cTOTAL_ADCs-1) then
+      when WRITE_WORD =>
+        if (count < cTOTAL_ADCs-1) then
           nextstate <= WRITE_WORD;
 
-           else
-       nextstate <= IDLE;
-           end if;
+        else
+          nextstate <= IDLE;
+        end if;
 
-    when PKT_LENGTH =>
+      when PKT_LENGTH =>
         nextstate <= HEADER_1;
 
-    when HEADER_1 =>
+      when HEADER_1 =>
         nextstate <= HEADER_2;
 
-    when HEADER_2 =>
+      when HEADER_2 =>
         nextstate <= HEADER_3;
 
-    when HEADER_3 =>
+      when HEADER_3 =>
         nextstate <= HEADER_4;
 
-    when HEADER_4 =>
+      when HEADER_4 =>
         nextstate <= OUT_VALID;
 
 
@@ -188,10 +188,10 @@ begin
       when FOOTER_1 =>
         nextstate <= FOOTER_2;
 
-    when FOOTER_2 =>
+      when FOOTER_2 =>
         nextstate <= FOOTER_3;
 
-    when FOOTER_3 =>
+      when FOOTER_3 =>
         nextstate <= EVENT_END;
 
       when EVENT_END =>
@@ -211,79 +211,79 @@ begin
       if (state = WRITE_WORD) then
         s_wr <= '1';
 
-          count     <= count +1;
+        count <= count +1;
       else
-        s_wr <= '0';
-		  count <= 0;
+        s_wr  <= '0';
+        count <= 0;
       end if;
 
-		data_long <= sFifoIn_o(count).q;
+      data_long <= sFifoIn_o(count).q;
 
     end if;
   end process;
 
-  footer_header: process (state, sFifoOut) is
+  footer_header : process (state, sFifoOut) is
   begin
 
     case state is
 
- 	  when PKT_LENGTH =>
- 		 oDATA.q <= int2slv((cTOTAL_ADCs*cFE_CLOCK_CYCLES)/2 +8, oDATA.q'length);
- 		 s_DATA_VALID <= '1';
- 		 s_rd <= '0';
+      when PKT_LENGTH =>
+        oDATA.q      <= int2slv((cTOTAL_ADCs*cFE_CLOCK_CYCLES)/2 +8, oDATA.q'length);
+        s_DATA_VALID <= '1';
+        s_rd         <= '0';
 
- 	  when header_1 =>
- 		  oDATA.q <= std_logic_vector(Header1_ES);
- 		  s_DATA_VALID <= '1';
- 		   s_rd <= '0';
+      when header_1 =>
+        oDATA.q      <= std_logic_vector(Header1_ES);
+        s_DATA_VALID <= '1';
+        s_rd         <= '0';
 
- 	  when header_2 =>
- 		  oDATA.q <= std_logic_vector(Header2_ES);
- 		  s_DATA_VALID <= '1';
- 		   s_rd <= '0';
+      when header_2 =>
+        oDATA.q      <= std_logic_vector(Header2_ES);
+        s_DATA_VALID <= '1';
+        s_rd         <= '0';
 
- 	  when header_3 =>
- 		  oDATA.q <= std_logic_vector(Header3_ES);
- 		  s_DATA_VALID <= '1';
- 		   s_rd <= '0';
+      when header_3 =>
+        oDATA.q      <= std_logic_vector(Header3_ES);
+        s_DATA_VALID <= '1';
+        s_rd         <= '0';
 
- 	  when header_4 =>
- 		  oDATA.q <= std_logic_vector(Header4_ES);
- 		  s_DATA_VALID <= '1';
- 		  s_rd <= '1';
+      when header_4 =>
+        oDATA.q      <= std_logic_vector(Header4_ES);
+        s_DATA_VALID <= '1';
+        s_rd         <= '1';
 
- 	  when OUT_VALID =>
- 		  oDATA.q <= sFifoOut.q(15 downto 0) & sFifoOut.q(31 downto 16);
- 	  s_DATA_VALID <= '1';
- 	  s_rd <= '1';
+      when OUT_VALID =>
+        oDATA.q      <= sFifoOut.q(15 downto 0) & sFifoOut.q(31 downto 16);
+        s_DATA_VALID <= '1';
+        s_rd         <= '1';
 
- 	  when footer_1 =>
- 	     oDATA.q <= std_logic_vector(Footer1_ES);
- 		s_DATA_VALID <= '1';
- 		 s_rd <= '0';
+      when footer_1 =>
+        oDATA.q      <= std_logic_vector(Footer1_ES);
+        s_DATA_VALID <= '1';
+        s_rd         <= '0';
 
- 	  when footer_2 =>
- 	     oDATA.q <= std_logic_vector(Footer2_ES); 
- 		  s_DATA_VALID <= '1';
- 		   s_rd <= '0';
+      when footer_2 =>
+        oDATA.q      <= std_logic_vector(Footer2_ES);
+        s_DATA_VALID <= '1';
+        s_rd         <= '0';
 
- 	  when footer_3 =>
- 	     oDATA.q <= std_logic_vector(Footer3_ES);
- 		  s_DATA_VALID <= '1';
- 		   s_rd <= '0';
+      when footer_3 =>
+        oDATA.q      <= std_logic_vector(Footer3_ES);
+        s_DATA_VALID <= '1';
+        s_rd         <= '0';
 
- 	  when others =>
- 	    oDATA.q  <= int2slv(0,oDATA.q'length);
- 		 s_DATA_VALID <= '0';
- 		  s_rd <= '0';
+      when others =>
+        oDATA.q      <= int2slv(0, oDATA.q'length);
+        s_DATA_VALID <= '0';
+        s_rd         <= '0';
 
- 	end case;
+    end case;
 
- 	 if (state = EVENT_END) then
-         s_end_of_event <= '1';
-       else
-         s_end_of_event <= '0';
-       end if;
+    if (state = EVENT_END) then
+      s_end_of_event <= '1';
+    else
+      s_end_of_event <= '0';
+    end if;
 
   end process;
 

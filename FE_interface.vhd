@@ -100,7 +100,7 @@ begin
 
       --!@bug not clear if the hold has to be hold or is just a pulse
       if (sFeState = HOLD or sFeState = SHIFT or sFeState = CLOCK_FORWARD
-            or sFeState = SYNCH_END) then
+          or sFeState = SYNCH_END) then
         sFpga2Fe.Hold <= '1';
       else
         sFpga2Fe.Hold <= '0';
@@ -119,7 +119,7 @@ begin
       end if;
 
       if (sFeState = SHIFT or sFeState = CLOCK_FORWARD
-            or sFeState = SYNCH_END) then
+          or sFeState = SYNCH_END) then
         sFpga2Fe.Clk <= sCntIn.slwClk;
       else
         sFpga2Fe.Clk <= '1';
@@ -152,7 +152,7 @@ begin
   sCountRst <= '1' when (sFeState = RESET or sFeState = IDLE) else
                '0';
   sCountIntf.en <= sCntIn.slwEn when (sFeState = HOLD or sFeState = SHIFT
-                                        or sFeState = CLOCK_FORWARD) else
+                                      or sFeState = CLOCK_FORWARD) else
                    '0';
   sCountIntf.load   <= '0';
   sCountIntf.preset <= (others => '0');
@@ -200,7 +200,7 @@ begin
       when RESET =>
         sNextFeState <= wait4en(sCntIn.slwEn, RESET, IDLE);
 
-        --Wait for the START signal to be asserted
+      --Wait for the START signal to be asserted
       when IDLE =>
         if (sCntIn.en = '1' and sCntIn.start = '1') then
           sNextFeState <= SYNCH_START;
@@ -208,19 +208,19 @@ begin
           sNextFeState <= IDLE;
         end if;
 
-        --Wait for the slow clock enable before starting
+      --Wait for the slow clock enable before starting
       when SYNCH_START =>
         sNextFeState <= wait4en(sCntIn.slwEn, SYNCH_START, HOLD);
 
-        --Assert the HOLD signal
+      --Assert the HOLD signal
       when HOLD =>
         sNextFeState <= wait4en(sCntIn.slwEn, HOLD, SHIFT);
 
-        --Assert the SHIFT signal
+      --Assert the SHIFT signal
       when SHIFT =>
         sNextFeState <= wait4en(sCntIn.slwEn, SHIFT, CLOCK_FORWARD);
 
-        --Send the clock to the FE(s)
+      --Send the clock to the FE(s)
       when CLOCK_FORWARD =>
         if (sCountIntf.count <
             int2slv(cFE_CLOCK_CYCLES, sCountIntf.count'length)) then
@@ -229,14 +229,14 @@ begin
           sNextFeState <= SYNCH_END;
         end if;
 
-        --Wait for the slow clock enable before ending the readout
+      --Wait for the slow clock enable before ending the readout
       when SYNCH_END =>
         sNextFeState <= wait4en(sCntIn.slwEn, SYNCH_END, COMPLETE);
 
       when COMPLETE =>
         sNextFeState <= IDLE;
 
-        --State not foreseen
+      --State not foreseen
       when others =>
         sNextFeState <= RESET;
 

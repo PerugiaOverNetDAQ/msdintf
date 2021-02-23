@@ -21,27 +21,27 @@ entity multiAdcPlaneInterface is
     pACTIVE_EDGE : string := "F"        --!"F": falling, "R": rising
     );
   port (
-    iCLK         : in  std_logic;       --!Main clock
-    iRST         : in  std_logic;       --!Main reset
+    iCLK          : in  std_logic;      --!Main clock
+    iRST          : in  std_logic;      --!Main reset
     -- control interface
     oCNT          : out tControlIntfOut;     --!Control signals in output
-    iCNT          : in  tControlIntfIn;  --!Control signals in input
+    iCNT          : in  tControlIntfIn;      --!Control signals in input
     iFE_CLK_DIV   : in  std_logic_vector(15 downto 0);  --!FE SlowClock divider
     iFE_CLK_DUTY  : in  std_logic_vector(15 downto 0);  --!FE SlowClock duty cycle
     iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
     iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
     iCFG_FE       : in  std_logic_vector(3 downto 0);   --!FE configurations
     -- FE interface
-    oFE0         : out tFpga2FeIntf;    --!Output signals to the FE0
-    oFE1         : out tFpga2FeIntf;    --!Output signals to the FE1
-    iFE          : in  tFe2FpgaIntf;    --!Input signals from the FE
+    oFE0          : out tFpga2FeIntf;   --!Output signals to the FE0
+    oFE1          : out tFpga2FeIntf;   --!Output signals to the FE1
+    iFE           : in  tFe2FpgaIntf;   --!Input signals from the FE
     -- ADC interface
-    oADC0        : out tFpga2AdcIntf;  --!Signals from the FPGA to the 0-4 ADCs
-    oADC1        : out tFpga2AdcIntf;  --!Signals from the FPGA to the 5-9 ADCs
-    iMULTI_ADC   : in  tMultiAdc2FpgaIntf;  --!Signals from the ADCs to the FPGA
+    oADC0         : out tFpga2AdcIntf;  --!Signals from the FPGA to the 0-4 ADCs
+    oADC1         : out tFpga2AdcIntf;  --!Signals from the FPGA to the 5-9 ADCs
+    iMULTI_ADC    : in  tMultiAdc2FpgaIntf;  --!Signals from the ADCs to the FPGA
     -- FIFO output interface
-    oMULTI_FIFO  : out tMultiAdcFifoOut;    --!Output interface of a FIFO
-    iMULTI_FIFO  : in  tMultiAdcFifoIn  --!Input interface of a FIFO
+    oMULTI_FIFO   : out tMultiAdcFifoOut;    --!Output interface of a FIFO
+    iMULTI_FIFO   : in  tMultiAdcFifoIn      --!Input interface of a FIFO
     );
 end multiAdcPlaneInterface;
 
@@ -78,8 +78,8 @@ architecture std of multiAdcPlaneInterface is
 
 begin
   -- Combinatorial assignments -------------------------------------------------
-  oCNT          <= sCntOut;
-  sCntIn        <= iCNT;
+  oCNT   <= sCntOut;
+  sCntIn <= iCNT;
 
   oMULTI_FIFO <= sFifoOut;
 

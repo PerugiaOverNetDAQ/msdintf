@@ -16,7 +16,7 @@ use work.basic_package.all;
 package FOOTpackage is
   constant cADC_DATA_WIDTH       : natural := 16;  --!ADC data-width
   constant cADC_FIFO_DEPTH       : natural := 256;  --!ADC FIFO number of words
-  constant cTOTAL_ADC_WORDS_NUM   : natural := 2048;  --! numero totale massimo di parole da 16 bit nella fifo finale 1280??
+  constant cTOTAL_ADC_WORDS_NUM  : natural := 2048;  --! numero totale massimo di parole da 16 bit nella fifo finale 1280??
   constant cFE_DAISY_CHAIN_DEPTH : natural := 2;   --!FEs in a daisy chain
   constant cFE_CHANNELS          : natural := 64;  --!Channels per FE
   constant cFE_CLOCK_CYCLES      : natural := cFE_DAISY_CHAIN_DEPTH*cFE_CHANNELS;  --!Number of clock cycles to feed a chain
@@ -26,52 +26,12 @@ package FOOTpackage is
 
   constant cFE_CLK_DIV   : std_logic_vector(15 downto 0) := int2slv(360, 16);  --!FE SlowClock divider
   constant cADC_CLK_DIV  : std_logic_vector(15 downto 0) := int2slv(18, 16);  --!ADC SlowClock divider
-  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(7, 16); --!FE SlowClock duty cycle
-  constant cADC_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(4, 16); --!ADC SlowClock duty cycle
+  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(7, 16);  --!FE SlowClock duty cycle
+  constant cADC_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(4, 16);  --!ADC SlowClock duty cycle
   --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
-  constant cCFG_PLANE    : std_logic_vector(15 downto 0) := x"0007"; --!uStrip configurations
-  constant cTRG_PERIOD   : std_logic_vector(31 downto 0) := x"0000FFFF"; --!Clock cycles between two internal triggers
-  constant cTRG2HOLD     : std_logic_vector(15 downto 0) := int2slv(325, 16); --!Clock-cycles between an external trigger and the FE-HOLD signal
-
-
-
-  type fifo_type is array (0 to cTOTAL_ADC_WORDS_NUM - 1)of std_logic_vector((2* cTOTAL_ADCs * cADC_DATA_WIDTH) - 1 downto 0);
-  subtype index_type is natural range fifo_type'range;
-
-
-  -- Declaration of generic types for FIFO interfaces -------------------------
-  --!@bug Quartus standard does not support this specification of records.\n
-  --!One possible solution can be found at:
-  --!https://stackoverflow.com/questions/7925361/passing-generics-to-record-port-types
-  -- --!@brief Input signals of a typical FIFO memory
-  -- type tFifoOut is record
-  --   -- undefined length; it will be set in subtypes
-  --   data  : std_logic_vector; --!Input data port
-  --   rd    : std_logic;        --!Read request
-  --   wr    : std_logic;        --!Write request
-  -- end record tFifoOut;
-
-  -- --!@brief Output signals of a typical FIFO memory
-  -- type tFifoIn is record
-  --   -- undefined length; it will be set in subtypes
-  --   q       : std_logic_vector; --!Output data port
-  --   aEmpty  : std_logic;        --!Almost empty
-  --   empty   : std_logic;        --!Empty
-  --   aFull   : std_logic;        --!Almost full
-  --   full    : std_logic;        --!Full
-  -- end record tFifoIn;
-  --
-  --
-  -- -- Declaration of specific subtypes for FIFOs of different lengths -----------
-  -- --!@brief 16-bit FIFO subtypes
-  -- subtype tFifoOut_16 is tFifoOut(data(cADC_DATA_WIDTH-1 downto 0));
-  -- subtype tFifoIn_16  is tFifoIn(q(cADC_DATA_WIDTH-1 downto 0));
-  --
-  -- -- Declaration of specific subtypes for counters of different lengths --------
-  -- --!@brief 16-bit FIFO subtypes
-  -- subtype tCountInterface_16 is
-  --   tCountInterface(preset(15 downto 0), count(15 downto 0));
-
+  constant cCFG_PLANE    : std_logic_vector(15 downto 0) := x"0007";  --!uStrip configurations
+  constant cTRG_PERIOD   : std_logic_vector(31 downto 0) := x"0000FFFF";  --!Clock cycles between two internal triggers
+  constant cTRG2HOLD     : std_logic_vector(15 downto 0) := int2slv(325, 16);  --!Clock-cycles between an external trigger and the FE-HOLD signal
 
   -- Types for the FE interface ------------------------------------------------
   --!IDE1140_DS front-End input signals (from the FPGA)
@@ -135,6 +95,7 @@ package FOOTpackage is
     full   : std_logic;                                     --!Full
   end record tFifoOut_ADC;
 
+  --!Output signals of the collector FIFOs
   type tAllFifoOut_ADC is record
     q      : std_logic_vector((2*cADC_DATA_WIDTH)-1 downto 0);  --!Output data port
     aEmpty : std_logic;                 --!Almost empty
@@ -143,49 +104,38 @@ package FOOTpackage is
     full   : std_logic;                 --!Full
   end record tAllFifoOut_ADC;
 
+  --!Configuration ports to the MSD subpart
   type msd_config is record
-    feClkDuty    : std_logic_vector(15 downto 0); --!FE slowClock duty cycle
-    feClkDiv     : std_logic_vector(15 downto 0); --!FE slowClock divider
-    adcClkDuty   : std_logic_vector(15 downto 0); --!ADC slowClock duty cycle
-    adcClkDiv    : std_logic_vector(15 downto 0); --!ADC slowClock divider
+    feClkDuty    : std_logic_vector(15 downto 0);  --!FE slowClock duty cycle
+    feClkDiv     : std_logic_vector(15 downto 0);  --!FE slowClock divider
+    adcClkDuty   : std_logic_vector(15 downto 0);  --!ADC slowClock duty cycle
+    adcClkDiv    : std_logic_vector(15 downto 0);  --!ADC slowClock divider
     --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
-    cfgPlane     : std_logic_vector(15 downto 0); --!uStrip configuration
-    intTrgPeriod : std_logic_vector(31 downto 0); --!Clock-cycles between two internal triggers
-    trg2Hold     : std_logic_vector(15 downto 0); --!Clock-cycles between an external trigger and the FE-HOLD signal
+    cfgPlane     : std_logic_vector(15 downto 0);  --!uStrip configuration
+    intTrgPeriod : std_logic_vector(31 downto 0);  --!Clock-cycles between two internal triggers
+    trg2Hold     : std_logic_vector(15 downto 0);  --!Clock-cycles between an external trigger and the FE-HOLD signal
   end record msd_config;
-
 
   --!Multiple AD7276A ADCs output signals and FIFOs
   type tMultiAdc2FpgaIntf is array (0 to cTOTAL_ADCS-1) of tAdc2FpgaIntf;
-
-
-
-  --type raw_event is array (0 to TOTAL_ADC_WORDS_NUM-1) of std_logic_vector (cADC_DATA_WIDTH-1 downto 0);
-
-
   type tMultiAdcFifoIn is array (0 to cTOTAL_ADCS-1) of tFifoIn_ADC;
+  type tMultiAdcFifoOut is array (0 to cTOTAL_ADCS-1) of tFifoOut_ADC;
 
+  --!
+  type fifo_type is array (0 to cTOTAL_ADC_WORDS_NUM - 1)of std_logic_vector((2* cTOTAL_ADCs * cADC_DATA_WIDTH) - 1 downto 0);
+  subtype index_type is natural range fifo_type'range;
 
+  --!Initialization constants for the upper types
   constant c_FROM_FIFO_INIT : tFifoOut_ADC := (full   => '0',
                                                empty  => '1',
                                                aFull  => '0',
                                                aEmpty => '0',
                                                q      => (others => '0'));
-
-
-
-
-  type tMultiAdcFifoOut is array (0 to cTOTAL_ADCS-1) of tFifoOut_ADC;
-
-  constant c_FROM_FIFO_INIT_ARRAY : tMultiAdcFifoOut := (others => c_FROM_FIFO_INIT);
-
   constant c_TO_FIFO_INIT : tFifoIn_ADC := (wr   => '0',
                                             data => (others => '0'),
                                             rd   => '0');
-
   constant c_TO_FIFO_INIT_ARRAY : tMultiAdcFifoIn := (others => c_TO_FIFO_INIT);
-
-
+  constant c_FROM_FIFO_INIT_ARRAY : tMultiAdcFifoOut := (others => c_FROM_FIFO_INIT);
 
   -- Components ----------------------------------------------------------------
   --!@brief Low-level front-end interface
@@ -297,27 +247,27 @@ package FOOTpackage is
       );
     port (
       --# {{clocks|Clock}}
-      iCLK         : in  std_logic;     --!Main clock
+      iCLK          : in  std_logic;    --!Main clock
       --# {{control|Control}}
-      iRST         : in  std_logic;     --!Main reset
-      oCNT         : out tControlIntfOut;     --!Control signals in output
-      iCNT         : in  tControlIntfIn;      --!Control signals in input
+      iRST          : in  std_logic;    --!Main reset
+      oCNT          : out tControlIntfOut;     --!Control signals in output
+      iCNT          : in  tControlIntfIn;      --!Control signals in input
       iFE_CLK_DIV   : in  std_logic_vector(15 downto 0);  --!FE SlowClock divider
       iFE_CLK_DUTY  : in  std_logic_vector(15 downto 0);  --!FE SlowClock duty cycle
       iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
       iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
       iCFG_FE       : in  std_logic_vector(3 downto 0);   --!FE configurations
       --# {{FE Interface}}
-      oFE0         : out tFpga2FeIntf;  --!Output signals to the FE0
-      oFE1         : out tFpga2FeIntf;  --!Output signals to the FE1
-      iFE          : in  tFe2FpgaIntf;  --!Input signals from the FE
+      oFE0          : out tFpga2FeIntf;   --!Output signals to the FE0
+      oFE1          : out tFpga2FeIntf;   --!Output signals to the FE1
+      iFE           : in  tFe2FpgaIntf;   --!Input signals from the FE
       --# {{ADC Interface}}
-      oADC0        : out tFpga2AdcIntf;  --!Signals from the FPGA to the 0-4 ADCs
-      oADC1        : out tFpga2AdcIntf;  --!Signals from the FPGA to the 5-9 ADCs
-      iMULTI_ADC   : in  tMultiAdc2FpgaIntf;  --!Signals from the ADCs to the FPGA
+      oADC0         : out tFpga2AdcIntf;  --!Signals from the FPGA to the 0-4 ADCs
+      oADC1         : out tFpga2AdcIntf;  --!Signals from the FPGA to the 5-9 ADCs
+      iMULTI_ADC    : in  tMultiAdc2FpgaIntf;  --!Signals from the ADCs to the FPGA
       --# {{Output FIFO Interface}}
-      oMULTI_FIFO  : out tMultiAdcFifoOut;    --!Output interface of a FIFO
-      iMULTI_FIFO  : in  tMultiAdcFifoIn      --!Input interface of a FIFO
+      oMULTI_FIFO   : out tMultiAdcFifoOut;    --!Output interface of a FIFO
+      iMULTI_FIFO   : in  tMultiAdcFifoIn      --!Input interface of a FIFO
       );
   end component multiAdcPlaneInterface;
 
@@ -325,21 +275,21 @@ package FOOTpackage is
   component Data_Builder_Top
     port (
       --# {{clocks|Clock}}
-      iCLK         : in  std_logic; --!Main clock
+      iCLK         : in  std_logic;     --!Main clock
       --# {{control|Control}}
-      iRST         : in  std_logic; --!Main reset
-      iEN          : in  std_logic;       --!Enable
-      iTRIG        : in  std_logic;       --!External trigger
-      oCNT         : out tControlIntfOut; --!Control signals in output-- still to decide where to connect it!!!!!
-      oCAL_TRIG    : out std_logic; --!Internal trigger output
+      iRST         : in  std_logic;     --!Main reset
+      iEN          : in  std_logic;     --!Enable
+      iTRIG        : in  std_logic;     --!External trigger
+      oCNT         : out tControlIntfOut;  --!Control signals in output-- still to decide where to connect it!!!!!
+      oCAL_TRIG    : out std_logic;     --!Internal trigger output
       iMSD_CONFIG  : in  msd_config;  --!Configuration from the control registers
       --# {{First FE-ADC chain Interface}}
-      oFE0         : out tFpga2FeIntf;        --!Output signals to the FE1
-      oADC0        : out tFpga2AdcIntf;       --!Output signals to the ADC1
+      oFE0         : out tFpga2FeIntf;  --!Output signals to the FE1
+      oADC0        : out tFpga2AdcIntf;    --!Output signals to the ADC1
       iMULTI_ADC   : in  tMultiAdc2FpgaIntf;  --!Input signals from the ADC1
       --# {{Second FE-ADC chain Interface}}
       oFE1         : out tFpga2FeIntf;  --!Output signals to the FE2
-      oADC1        : out tFpga2AdcIntf; --!Output signals to the ADC2
+      oADC1        : out tFpga2AdcIntf;    --!Output signals to the ADC2
       --# {{Event Builder Interface}}
       oDATA        : out tAllFifoOut_ADC;
       DATA_VALID   : out std_logic;
@@ -356,7 +306,7 @@ package FOOTpackage is
       iRST         : in  std_logic;
       --#{{MSD Interface}}
       iMULTI_FIFO  : in  tMultiAdcFifoOut;
-		oMULTI_FIFO  : out tMultiAdcFifoIn;
+      oMULTI_FIFO  : out tMultiAdcFifoIn;
       --#{{HPS Interface}}
       oDATA        : out tAllFifoOut_ADC;
       DATA_VALID   : out std_logic;
