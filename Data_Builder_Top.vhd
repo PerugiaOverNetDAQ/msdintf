@@ -41,14 +41,14 @@ end Data_Builder_Top;
 
 architecture std of Data_Builder_Top is
 
-  signal sCLK     : std_logic;
-  signal sRST     : std_logic;
-  signal sEn      : std_logic;
-  signal sTrigInt : std_logic;
-  signal siTrig   : std_logic;
-  signal soFE0    : tFpga2FeIntf;
-  signal soFE1    : tFpga2FeIntf;
-  signal siFE     : tFe2FpgaIntf;
+  signal sCLK         : std_logic;
+  signal sRST         : std_logic;
+  signal sEn          : std_logic;
+  signal sTrigInt     : std_logic;
+  signal sTrigRising  : std_logic;
+  signal soFE0        : tFpga2FeIntf;
+  signal soFE1        : tFpga2FeIntf;
+  signal siFE         : tFe2FpgaIntf;
 
   signal soADC0        : tFpga2AdcIntf;
   signal soADC1        : tFpga2AdcIntf;
@@ -73,7 +73,6 @@ begin
   sCLK          <= iCLK;
   sRST          <= iRST;
   sEN           <= iEN;
-  siTrig        <= iTRIG;
   siMULTI_ADC   <= iMULTI_ADC;
   siFE.ShiftOut <= '1';
 
@@ -95,6 +94,14 @@ begin
                   sExtTrigDel;
   sCntIn.slwClk <= '0';
   sCntIn.slwEn  <= '0';
+
+  trig_edge : edge_detector
+    port map(
+      iCLK    => iCLK,
+      iRST    => iRST,
+      iD      => iTRIG,
+      oEDGE_R => sTrigRising
+      );
   ------------------------------------------------------------------------------
 
   --!@brief Pulse generator for calibration triggers
@@ -119,7 +126,7 @@ begin
     port map(
       iCLK   => sCLK,
       iRST   => sRST,
-      iSTART => siTRIG,
+      iSTART => sTrigRising,
       iDELAY => iMSD_CONFIG.trg2Hold,
       oBUSY  => sExtTrigDelBusy,
       oOUT   => sExtTrigDel
