@@ -43,7 +43,6 @@ architecture std of Data_Builder_Top is
 
   signal sCLK        : std_logic;
   signal sRST        : std_logic;
-  signal sEn         : std_logic;
   signal sTrigInt    : std_logic;
   signal sTrigRising : std_logic;
   signal soFE0       : tFpga2FeIntf;
@@ -72,7 +71,6 @@ begin
   --- Combinatorial assignments ------------------------------------------------
   sCLK          <= iCLK;
   sRST          <= iRST;
-  sEN           <= iEN;
   siMULTI_ADC   <= iMULTI_ADC;
   siFE.ShiftOut <= '1';
 
@@ -98,7 +96,7 @@ begin
   trig_edge : edge_detector
     port map(
       iCLK    => iCLK,
-      iRST    => iRST,
+      iRST    => '0',
       iD      => iTRIG,
       oEDGE_R => sTrigRising
       );

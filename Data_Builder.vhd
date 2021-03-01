@@ -128,7 +128,7 @@ begin
   fsm : process (sCLK)
   begin
     if (rising_edge(sCLK)) then
-      if (iRST = '1') then
+      if (sRST = '1') then
         state <= RESET;
       else
         state <= nextstate;
