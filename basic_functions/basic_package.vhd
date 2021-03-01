@@ -162,7 +162,6 @@ end component;
 
 end basic_package;
 
---!@brief Implementation of the functions behaviour
 package body basic_package is
   -- Functions -----------------------------------------------------------------
   --!Converts integer to std_logic_vector(l-1 downto 0)
