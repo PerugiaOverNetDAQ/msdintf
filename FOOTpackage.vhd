@@ -20,11 +20,12 @@ package FOOTpackage is
   constant cFE_DAISY_CHAIN_DEPTH : natural := 2;   --!FEs in a daisy chain
   constant cFE_CHANNELS          : natural := 64;  --!Channels per FE
   constant cFE_CLOCK_CYCLES      : natural := cFE_DAISY_CHAIN_DEPTH*cFE_CHANNELS;  --!Number of clock cycles to feed a chain
+  constant cFE_SHIFT_2_CLK       : natural := 0; --!Wait between FE shift and clock assertion
   constant cTOTAL_ADCS           : natural := 10; --!Total ADCs
 
 
-  constant cFE_CLK_DIV   : std_logic_vector(15 downto 0) := int2slv(360, 16);  --!FE SlowClock divider
-  constant cADC_CLK_DIV  : std_logic_vector(15 downto 0) := int2slv(18, 16);  --!ADC SlowClock divider
+  constant cFE_CLK_DIV   : std_logic_vector(15 downto 0) := int2slv(40, 16);  --!FE SlowClock divider
+  constant cADC_CLK_DIV  : std_logic_vector(15 downto 0) := int2slv(2, 16);  --!ADC SlowClock divider
   constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(7, 16);  --!FE SlowClock duty cycle
   constant cADC_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(4, 16);  --!ADC SlowClock duty cycle
   --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
@@ -148,6 +149,7 @@ package FOOTpackage is
       iCNT      : in  tControlIntfIn;
       iCNT_G    : in  std_logic_vector(2 downto 0);
       iCNT_Test : in  std_logic;
+      oDATA_VLD : out std_logic;
       --# {{FE interface}}
       oFE       : out tFpga2FeIntf;
       iFE       : in  tFe2FpgaIntf

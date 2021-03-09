@@ -51,10 +51,11 @@ architecture std of multiAdcPlaneInterface is
   signal sFifoOut : tMultiAdcFifoOut;
   signal sFifoIn  : tMultiAdcFifoIn;
 
-  signal sFe     : tFpga2FeIntf;
-  signal sFeRst  : std_logic;
-  signal sFeOCnt : tControlIntfOut;
-  signal sFeICnt : tControlIntfIn;
+  signal sFe        : tFpga2FeIntf;
+  signal sFeRst     : std_logic;
+  signal sFeOCnt    : tControlIntfOut;
+  signal sFeICnt    : tControlIntfIn;
+  signal sFeDataVld : std_logic;
 
   signal sAdc      : tFpga2AdcIntf;
   signal sAdcRst   : std_logic;
@@ -139,6 +140,7 @@ begin
       iCNT      => sFeICnt,
       iCNT_G    => iCFG_FE(2 downto 0),
       iCNT_Test => iCFG_FE(3),
+      oDATA_VLD => sFeDataVld,
       oFE       => sFe,
       iFE       => iFE
       );
@@ -326,7 +328,7 @@ begin
         if (sFeOCnt.compl = '1') then
           sNextHpState <= END_HP_READING;
         else
-          if (sFsmSynchEn = '1') then
+          if (sFsmSynchEn = '1' and sFeDataVld = '1') then
             sNextHpState <= START_ADC_READING;
           else
             sNextHpState <= FE_EDGE;
