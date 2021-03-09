@@ -6,7 +6,7 @@ import FOOTpackage::ctotal_adcs;
 
 
 package pkgConf;
-  time fast_clock_period = 13ns;
+  time fast_clock_period = 20ns;
   int trans_count = 2;
 
   //ADC and FE configuration
@@ -22,5 +22,4 @@ package pkgConf;
   parameter adc_data_width = FOOTpackage::cadc_data_width;
   parameter fe_clock_cycles = FOOTpackage::cfe_clock_cycles;
   parameter total_adcs = FOOTpackage::ctotal_adcs;
-  parameter pfe_hold2shift_delay = FOOTpackage::cfe_hold2shift_delay;
 endpackage

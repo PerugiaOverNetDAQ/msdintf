@@ -49,9 +49,10 @@ class FootDriver;
       @(negedge ifFe.Holdn);
       @(negedge ifFe.ShiftInn);
 
-      fe2adc.put(FeTrans.AnalOut[0]);
+      //fe2adc.put(FeTrans.AnalOut[0]);
       //$info("[DRV-FE] Word in output: [0]:%h - [1]:%h", FeTrans.AnalOut[0][0], FeTrans.AnalOut[0][1]);
-      for (int i=1; i<FeClockCycles; i++)  begin
+      //for (int i=1; i<FeClockCycles; i++)  begin
+      for (int i=0; i<FeClockCycles; i++)  begin
         @(negedge ifFe.Clk);
         //$info("[DRV-FE] Word in output: [0]:%h - [1]:%h", FeTrans.AnalOut[i][0], FeTrans.AnalOut[i][1]);
         fe2adc.put(FeTrans.AnalOut[i]);
