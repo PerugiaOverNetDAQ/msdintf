@@ -8,6 +8,7 @@ import FOOTpackage::tcontrolintfin;
 import FOOTpackage::tcontrolintfout;
 import FOOTpackage::tfifoout_adc;
 import FOOTpackage::tfifoin_adc;
+import FOOTpackage::msd_config;
 
 import FOOTpackage::tmultiadc2fpgaintf;
 import FOOTpackage::tmultiadcfifoout;
@@ -50,7 +51,9 @@ module tbench_top;
   tmultiadcfifoout    sFifoOut;
   tmultiadcfifoin     sFifoIn;
   logic [15:0]        FeClkDiv;
+  logic [15:0]        FeClkDuty;
   logic [15:0]        AdcClkDiv;
+  logic [15:0]        AdcClkDuty;
   logic [3:0]         CfgFe;
 
   multiAdcPlaneInterface #(
@@ -61,11 +64,15 @@ module tbench_top;
     .oCNT         (sCntOut),
     .iCNT         (sCntIn),
     .iFE_CLK_DIV  (FeClkDiv),
+    .iFE_CLK_DUTY (FeClkDuty),
     .iADC_CLK_DIV (AdcClkDiv),
+    .iADC_CLK_DUTY(AdcClkDuty),
     .iCFG_FE      (CfgFe),
-    .oFE          (fpga2fe),
+    .oFE0         (fpga2fe),
+    .oFE1         (),
     .iFE          (fe2fpga),
-    .oADC         (fpga2adc),
+    .oADC0        (fpga2adc),
+    .oADC1        (),
     .iMULTI_ADC   (adc2fpga),
     .oMULTI_FIFO  (sFifoOut),
     .iMULTI_FIFO  (sFifoIn)
@@ -74,7 +81,9 @@ module tbench_top;
   //Initialization of signals and configurations
   initial begin
     FeClkDiv        <= pkgConf::fe_clock_divider;
+    FeClkDuty       <= pkgConf::fe_clock_duty;
     AdcClkDiv       <= pkgConf::adc_clock_divider;
+    AdcClkDuty      <= pkgConf::adc_clock_duty;
     CfgFe           <= pkgConf::CfgFe;
     for (int a=0;a<pkgConf::total_adcs;a++) begin
         iFifoIntf.wr[a]   <= 1'b0;
