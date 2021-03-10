@@ -123,7 +123,6 @@ begin
     if (rising_edge(iCLK)) then
       sFpga2Fe.TestOn <= iCNT_Test;
 
-      --!@bug not clear if the hold has to be hold or is just a pulse
       if (sFeState = HOLD or sFeState = SHIFT or sFeState = FIRST_CLOCK
           or sFeState = CLOCK_FORWARD or sFeState = SYNCH_END) then
         sFpga2Fe.Hold <= '1';
@@ -137,16 +136,20 @@ begin
         sFpga2Fe.DRst <= '0';
       end if;
 
-      if (sFeState = RESET or sFeState = IDLE or
-         (sFeState = FIRST_CLOCK and iCNT_OTHER_EDGE='1')) then
-        sFpga2Fe.ShiftIn <= '0';
-      elsif (sFeState = SHIFT) then
+      if (sFeState = SHIFT or sFeState = FIRST_CLOCK) then
         sFpga2Fe.ShiftIn <= not sAtLeastOneFe;
+      elsif (sFeState = CLOCK_FORWARD) then
+        if (iCNT_OTHER_EDGE='1') then
+          sFpga2Fe.ShiftIn <= '0';
+        end if;
+      else
+        sFpga2Fe.ShiftIn <= '0';
       end if;
 
-      if (sFeState = FIRST_CLOCK or sFeState = CLOCK_FORWARD
-          or sFeState = SYNCH_END) then
+      if (sFeState = CLOCK_FORWARD or sFeState = SYNCH_END) then
         sFpga2Fe.Clk <= sCntIn.slwClk;
+      elsif (sFeState = FIRST_CLOCK) then
+        sFpga2Fe.Clk <= '0';
       else
         sFpga2Fe.Clk <= '1';
       end if;
@@ -178,8 +181,7 @@ begin
         sAtLeastOneFe <= '0';
       end if;
 
-      if (sNextFeState = FIRST_CLOCK or sNextFeState = CLOCK_FORWARD
-          or sNextFeState = SYNCH_END) then
+      if (sNextFeState = CLOCK_FORWARD or sNextFeState = SYNCH_END) then
         oDATA_VLD <= '1';
       else
         oDATA_VLD <= '0';
@@ -199,8 +201,7 @@ begin
   sChCountRst <= '1' when (sFeState = RESET or sFeState = IDLE
                            or sFeState = SHIFT) else
                  '0';
-  sChCount.en <= sCntIn.slwEn when (sFeState = FIRST_CLOCK
-                                    or sFeState = CLOCK_FORWARD) else
+  sChCount.en <= sCntIn.slwEn when (sFeState = CLOCK_FORWARD) else
                  '0';
   --! @brief Multi-purpose counter to implement delays in the FSM
   CH_COUNTER : counter
