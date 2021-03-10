@@ -51,11 +51,12 @@ architecture std of multiAdcPlaneInterface is
   signal sFifoOut : tMultiAdcFifoOut;
   signal sFifoIn  : tMultiAdcFifoIn;
 
-  signal sFe        : tFpga2FeIntf;
-  signal sFeRst     : std_logic;
-  signal sFeOCnt    : tControlIntfOut;
-  signal sFeICnt    : tControlIntfIn;
-  signal sFeDataVld : std_logic;
+  signal sFe          : tFpga2FeIntf;
+  signal sFeRst       : std_logic;
+  signal sFeOCnt      : tControlIntfOut;
+  signal sFeICnt      : tControlIntfIn;
+  signal sFeDataVld   : std_logic;
+  signal sFeOtherEdge : std_logic;
 
   signal sAdc      : tFpga2AdcIntf;
   signal sAdcRst   : std_logic;
@@ -94,6 +95,8 @@ begin
   -- Slow signals Generator ----------------------------------------------------
   sFeICnt.slwEn <= sFeCdFal when (pACTIVE_EDGE = "F") else
                    sFeCdRis;
+  sFeOtherEdge  <= sFeCdRis when (pACTIVE_EDGE = "F") else
+                   sFeCdFal;
   --!@brief Generate the SlowClock and SlowEnable for the FEs interface
   FE_div : clock_divider
     generic map(
@@ -140,6 +143,7 @@ begin
       iCNT      => sFeICnt,
       iCNT_G    => iCFG_FE(2 downto 0),
       iCNT_Test => iCFG_FE(3),
+      iCNT_OTHER_EDGE => sFeOtherEdge,
       oDATA_VLD => sFeDataVld,
       oFE       => sFe,
       iFE       => iFE

@@ -26,7 +26,7 @@ package FOOTpackage is
 
   constant cFE_CLK_DIV   : std_logic_vector(15 downto 0) := int2slv(40, 16);  --!FE SlowClock divider
   constant cADC_CLK_DIV  : std_logic_vector(15 downto 0) := int2slv(2, 16);  --!ADC SlowClock divider
-  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(7, 16);  --!FE SlowClock duty cycle
+  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(2, 16);  --!FE SlowClock duty cycle
   constant cADC_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(4, 16);  --!ADC SlowClock duty cycle
   --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
   constant cCFG_PLANE    : std_logic_vector(15 downto 0) := x"0007";  --!uStrip configurations
@@ -149,6 +149,7 @@ package FOOTpackage is
       iCNT      : in  tControlIntfIn;
       iCNT_G    : in  std_logic_vector(2 downto 0);
       iCNT_Test : in  std_logic;
+      iCNT_OTHER_EDGE : in std_logic;
       oDATA_VLD : out std_logic;
       --# {{FE interface}}
       oFE       : out tFpga2FeIntf;

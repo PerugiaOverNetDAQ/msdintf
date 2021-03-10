@@ -25,6 +25,7 @@ entity FE_interface is
     iCNT      : in  tControlIntfIn;     --!Control signals in input
     iCNT_G    : in  std_logic_vector(2 downto 0);  --!Values for FE G* parameters
     iCNT_Test : in  std_logic;          --!Flag to activate the FE test-mode
+    iCNT_OTHER_EDGE : in std_logic;     --!Opposite edge when compared to the slwEn
     oDATA_VLD : out std_logic;          --!Flags data available at ADC input
     -- FE interface
     oFE       : out tFpga2FeIntf;       --!Signals from the FPGA to the FE
@@ -138,6 +139,8 @@ begin
 
       if (sFeState = SHIFT or sFeState = FIRST_CLOCK) then
         sFpga2Fe.ShiftIn <= not sAtLeastOneFe;
+      elsif (sFeState = FIRST_CLOCK and iCNT_OTHER_EDGE='1') then
+        sFpga2Fe.ShiftIn <= '0';
       else
         sFpga2Fe.ShiftIn <= '0';
       end if;
