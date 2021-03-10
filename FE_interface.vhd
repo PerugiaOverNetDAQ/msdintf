@@ -137,12 +137,11 @@ begin
         sFpga2Fe.DRst <= '0';
       end if;
 
-      if (sFeState = SHIFT or sFeState = FIRST_CLOCK) then
+      if (sFeState = RESET or sFeState = IDLE or
+         (sFeState = FIRST_CLOCK and iCNT_OTHER_EDGE='1')) then
+        sFpga2Fe.ShiftIn <= '0';
+      elsif (sFeState = SHIFT) then
         sFpga2Fe.ShiftIn <= not sAtLeastOneFe;
-      elsif (sFeState = FIRST_CLOCK and iCNT_OTHER_EDGE='1') then
-        sFpga2Fe.ShiftIn <= '0';
-      else
-        sFpga2Fe.ShiftIn <= '0';
       end if;
 
       if (sFeState = FIRST_CLOCK or sFeState = CLOCK_FORWARD
