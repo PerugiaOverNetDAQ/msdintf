@@ -20,7 +20,7 @@ package FOOTpackage is
   constant cFE_DAISY_CHAIN_DEPTH : natural := 2;   --!FEs in a daisy chain
   constant cFE_CHANNELS          : natural := 64;  --!Channels per FE
   constant cFE_CLOCK_CYCLES      : natural := cFE_DAISY_CHAIN_DEPTH*cFE_CHANNELS;  --!Number of clock cycles to feed a chain
-  constant cFE_SHIFT_2_CLK       : natural := 0; --!Wait between FE shift and clock assertion
+  constant cFE_SHIFT_2_CLK       : natural := 2; --!Wait between FE shift and clock assertion
   constant cTOTAL_ADCS           : natural := 10; --!Total ADCs
 
 

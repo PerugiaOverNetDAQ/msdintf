@@ -44,7 +44,7 @@ architecture std of FE_interface is
   signal sFe2Fpga : tFe2FpgaIntf;
 
   type tFsmFe is (RESET, IDLE, SYNCH_START, HOLD, SHIFT,
-                  CLOCK_FORWARD, SYNCH_END, COMPLETE);
+                  FIRST_CLOCK, CLOCK_FORWARD, SYNCH_END, COMPLETE);
   signal sFeState, sNextFeState : tFsmFe;
 
   --!@brief Wait for the enable assertion to change state
@@ -123,8 +123,8 @@ begin
       sFpga2Fe.TestOn <= iCNT_Test;
 
       --!@bug not clear if the hold has to be hold or is just a pulse
-      if (sFeState = HOLD or sFeState = SHIFT or sFeState = CLOCK_FORWARD
-          or sFeState = SYNCH_END) then
+      if (sFeState = HOLD or sFeState = SHIFT or sFeState = FIRST_CLOCK
+          or sFeState = CLOCK_FORWARD or sFeState = SYNCH_END) then
         sFpga2Fe.Hold <= '1';
       else
         sFpga2Fe.Hold <= '0';
@@ -136,13 +136,14 @@ begin
         sFpga2Fe.DRst <= '0';
       end if;
 
-      if (sFeState = SHIFT and sS2cCount.count = 0) then
+      if (sFeState = SHIFT or sFeState = FIRST_CLOCK) then
         sFpga2Fe.ShiftIn <= not sAtLeastOneFe;
       else
         sFpga2Fe.ShiftIn <= '0';
       end if;
 
-      if (sFeState = CLOCK_FORWARD or sFeState = SYNCH_END) then
+      if (sFeState = FIRST_CLOCK or sFeState = CLOCK_FORWARD
+          or sFeState = SYNCH_END) then
         sFpga2Fe.Clk <= sCntIn.slwClk;
       else
         sFpga2Fe.Clk <= '1';
@@ -175,7 +176,8 @@ begin
         sAtLeastOneFe <= '0';
       end if;
 
-      if (sNextFeState = CLOCK_FORWARD or sNextFeState = SYNCH_END) then
+      if (sNextFeState = FIRST_CLOCK or sNextFeState = CLOCK_FORWARD
+          or sNextFeState = SYNCH_END) then
         oDATA_VLD <= '1';
       else
         oDATA_VLD <= '0';
@@ -192,9 +194,11 @@ begin
   sDcCount.preset <= (others => '0');
   sS2cCount.preset<= (others => '0');
 
-  sChCountRst <= '1' when (sFeState = RESET or sFeState = IDLE or sFeState = SHIFT) else
+  sChCountRst <= '1' when (sFeState = RESET or sFeState = IDLE
+                           or sFeState = SHIFT) else
                  '0';
-  sChCount.en <= sCntIn.slwEn when (sFeState = CLOCK_FORWARD) else
+  sChCount.en <= sCntIn.slwEn when (sFeState = FIRST_CLOCK
+                                    or sFeState = CLOCK_FORWARD) else
                  '0';
   --! @brief Multi-purpose counter to implement delays in the FSM
   CH_COUNTER : counter
@@ -300,15 +304,19 @@ begin
       --Assert the SHIFT signal without forwarding clock
       when SHIFT =>
         if (sS2cCount.count <
-                  int2slv(cFE_SHIFT_2_CLK, sS2cCount.count'length)) then
+                  int2slv(cFE_SHIFT_2_CLK-1, sS2cCount.count'length)) then
           --Wait until the  delay is over
           sNextFeState <= SHIFT;
         else
           --Delay concluded
-          sNextFeState <= wait4en(sCntIn.slwEn, SHIFT, CLOCK_FORWARD);
+          sNextFeState <= wait4en(sCntIn.slwEn, SHIFT, FIRST_CLOCK);
         end if;
 
-      --Send the clock to the FE(s)
+      --First clock forwarded to the FE
+      when FIRST_CLOCK =>
+        sNextFeState <= wait4en(sCntIn.slwEn, FIRST_CLOCK, CLOCK_FORWARD);
+
+      --Send the remaining clocks to the FE(s)
       when CLOCK_FORWARD =>
         if (sChCount.count <
             int2slv(cFE_CHANNELS-1, sChCount.count'length)) then
