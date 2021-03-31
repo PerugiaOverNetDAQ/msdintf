@@ -7,15 +7,17 @@ basic elements, e.g. FIFOs.
 # Architecture
 ![MSD Block Diagram](./doc/img/msdintf_block_diagram.png)
 
-- *Data_Builder_Top.vhd*: wrapper that instantiates Data_Builder,
-multiAdcPlaneInterface, and ancillary tools.
-- *multiAdcPlaneInterface.vhd*: it instantiates multiADC_interface and
-FE_interface, synchronizes the two of them and it includes a FIFO for each ADC.
-- *FE_interface.vhd*: Interface to the IDEAS 1140.
-- *multiADC_interface.vhd*: Interface to the ADCs. Sample the incoming signals in
-a 16-bit shift register.
-- *Data_Builder.vhd*: Collects the data from all the ADC FIFOs into a larger one,
-and implement the output interface to our FOOT DAQ
+- **Data_Builder_Top.vhd**: wrapper that instantiates *Data_Builder.vhd*,
+*multiAdcPlaneInterface.vhd*, and ancillary tools.
+- **multiAdcPlaneInterface.vhd**: interface to a X-Y plane. It instantiates and
+synchronizes *multiADC_interface.vhd* and *FE_interface.vhd* and it includes
+a FIFO for each ADC.
+- **FE_interface.vhd**: interface to the IDEAS 1140 Front-Ends.
+- **multiADC_interface.vhd**: interface to the ADCs. Samples the incoming signals in
+a 16-bit shift-register.
+- **Data_Builder.vhd**: collects the ADC FIFOs data into a bigger FIFO, moving
+from 16-bit to 32-bit words. It also implements the output interface to the
+FOOT DAQ.
 
 In the folder *basic_functions* there are some basic tools (counters,
 shift-registers, ...) that are used in the other modules.
@@ -23,8 +25,8 @@ shift-registers, ...) that are used in the other modules.
 The gateware is organized in packages to group parameters, types declarations,
 and components declarations.
 In particular, there are two packages:
-- *FOOTpackage.vhd*: Main package.
-- *basic_functions/basic_package.vhd*: Package containing basic functions and tools.
+- **FOOTpackage.vhd**: Main package.
+- **basic_functions/basic_package.vhd**: Package containing basic functions and tools.
 
 
 # Specifications for the FE-ADC sequencer
@@ -33,11 +35,13 @@ In particular, there are two packages:
 - The system shall produce an **internal periodic trigger** for calibration
 purposes
   - The frequency of this trigger shall be settable via a register
+- Both trigger shall be delayed before reaching the actual interface modules
+  - The delay shall be settable via a configuration register
 - During the whole readout operation, the system shall assert a **busy line**
 to the central DAQ
-- A detector board represents (hybrid) one half plane. In each hybrid there are:
+- A detector board (hybrid) represents one half plane. In each hybrid there are:
   - 1x 640-channel microstrip detector
-	- 10x FEs grouped in 5 subsets of 2 FEs each, connected in a daisy-chain
+  - 10x FEs grouped in 5 subsets of 2 FEs each, connected in a daisy-chain
 - An ADC board reads out two hybrids, to form an X-Y plane.
   - 10x ADCs digitize the 20x FE outputs
 	  - 1x ADC is connected to a group of 2x FEs
@@ -49,14 +53,13 @@ Front-Ends and ADCs models:
 ---
 Once a trigger occurs, the sequencer shall perform the following steps:
 
-1. **Assert the hold line** of the FEs
-	- The hold signal shall be asserted at a settable time after the trigger
+1. **Assert the hold** line of the FEs
 2. **Forward the clock** to the FEs and to the ADCs
 	- The FEs will shift their analog output into the ADCs
 3. **Collect the digital output** from the ADCs
 4. ADCs and FEs should have **synchronous clocks**
 	1. Variable frequency, settable by two registers
-	2. FEs should have a clock divider greater than ADCs by a factor 18 at least
+	2. FEs should have a clock divider greater than ADCs by a factor 18, at least
 5. The clock of the FE shall have a duty-cycle lower than 50%, in order to avoid ringing at the sampling
 
 ---
