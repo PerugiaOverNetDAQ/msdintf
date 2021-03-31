@@ -25,6 +25,8 @@ entity FE_interface is
     iCNT      : in  tControlIntfIn;     --!Control signals in input
     iCNT_G    : in  std_logic_vector(2 downto 0);  --!Values for FE G* parameters
     iCNT_Test : in  std_logic;          --!Flag to activate the FE test-mode
+    iCNT_OTHER_EDGE : in std_logic;     --!Opposite edge when compared to the slwEn
+    oDATA_VLD : out std_logic;          --!Flags data available at ADC input
     -- FE interface
     oFE       : out tFpga2FeIntf;       --!Signals from the FPGA to the FE
     iFE       : in  tFe2FpgaIntf        --!Signals from the FE to the FPGA
@@ -32,7 +34,10 @@ entity FE_interface is
 end FE_interface;
 
 architecture std of FE_interface is
-  constant cCOUNT_INTERFACE : natural := 16;
+  constant cCH_COUNT_WIDTH  : natural
+                                := ceil_log2(cFE_CHANNELS+cFE_SHIFT_2_CLK+1)+1;
+  constant cDC_COUNT_WIDTH  : natural := ceil_log2(cFE_DAISY_CHAIN_DEPTH)+1;
+  constant cS2C_COUNT_WIDTH : natural := 4;
 
   signal sCntIn   : tControlIntfIn;
   signal sCntOut  : tControlIntfOut;
@@ -40,8 +45,7 @@ architecture std of FE_interface is
   signal sFe2Fpga : tFe2FpgaIntf;
 
   type tFsmFe is (RESET, IDLE, SYNCH_START, HOLD, SHIFT,
-                  CLOCK_FORWARD, SYNCH_END, COMPLETE
-                  );
+                  FIRST_CLOCK, CLOCK_FORWARD, SYNCH_END, COMPLETE);
   signal sFeState, sNextFeState : tFsmFe;
 
   --!@brief Wait for the enable assertion to change state
@@ -60,16 +64,37 @@ architecture std of FE_interface is
     return goto;
   end function wait4en;
 
-  type tCountInterface is record
-    preset : std_logic_vector(cCOUNT_INTERFACE-1 downto 0);
-    count  : std_logic_vector(cCOUNT_INTERFACE-1 downto 0);
+  type tChCountInterface is record
+    preset : std_logic_vector(cCH_COUNT_WIDTH-1 downto 0);
+    count  : std_logic_vector(cCH_COUNT_WIDTH-1 downto 0);
     en     : std_logic;
     load   : std_logic;
     carry  : std_logic;
-  end record tCountInterface;
-  signal sCountRst  : std_logic;
-  signal sCountIntf : tCountInterface;
+  end record tChCountInterface;
+  signal sChCountRst  : std_logic;
+  signal sChCount     : tChCountInterface;
 
+  type tDcCountInterface is record
+    preset : std_logic_vector(cDC_COUNT_WIDTH-1 downto 0);
+    count  : std_logic_vector(cDC_COUNT_WIDTH-1 downto 0);
+    en     : std_logic;
+    load   : std_logic;
+    carry  : std_logic;
+  end record tDcCountInterface;
+  signal sDcCountRst  : std_logic;
+  signal sDcCount     : tDcCountInterface;
+
+  type tS2cCountInterface is record
+    preset : std_logic_vector(cS2C_COUNT_WIDTH-1 downto 0);
+    count  : std_logic_vector(cS2C_COUNT_WIDTH-1 downto 0);
+    en     : std_logic;
+    load   : std_logic;
+    carry  : std_logic;
+  end record tS2cCountInterface;
+  signal sS2cCountRst : std_logic;
+  signal sS2cCount    : tS2cCountInterface;
+
+  signal sAtLeastOneFe : std_logic;
 begin
   -- Combinatorial assignments -------------------------------------------------
   oCNT   <= sCntOut;
@@ -99,8 +124,8 @@ begin
       sFpga2Fe.TestOn <= iCNT_Test;
 
       --!@bug not clear if the hold has to be hold or is just a pulse
-      if (sFeState = HOLD or sFeState = SHIFT or sFeState = CLOCK_FORWARD
-          or sFeState = SYNCH_END) then
+      if (sFeState = HOLD or sFeState = SHIFT or sFeState = FIRST_CLOCK
+          or sFeState = CLOCK_FORWARD or sFeState = SYNCH_END) then
         sFpga2Fe.Hold <= '1';
       else
         sFpga2Fe.Hold <= '0';
@@ -112,13 +137,14 @@ begin
         sFpga2Fe.DRst <= '0';
       end if;
 
-      if (sFeState = SHIFT) then
-        sFpga2Fe.ShiftIn <= '1';
-      else
+      if (sFeState = RESET or sFeState = IDLE or
+         (sFeState = FIRST_CLOCK and iCNT_OTHER_EDGE='1')) then
         sFpga2Fe.ShiftIn <= '0';
+      elsif (sFeState = SHIFT) then
+        sFpga2Fe.ShiftIn <= not sAtLeastOneFe;
       end if;
 
-      if (sFeState = SHIFT or sFeState = CLOCK_FORWARD
+      if (sFeState = FIRST_CLOCK or sFeState = CLOCK_FORWARD
           or sFeState = SYNCH_END) then
         sFpga2Fe.Clk <= sCntIn.slwClk;
       else
@@ -146,30 +172,90 @@ begin
         sCntOut.compl <= '0';
       end if;
 
+      if (sFeState = SYNCH_END) then
+        sAtLeastOneFe <= '1';
+      elsif (sFeState = HOLD) then
+        sAtLeastOneFe <= '0';
+      end if;
+
+      if (sNextFeState = FIRST_CLOCK or sNextFeState = CLOCK_FORWARD
+          or sNextFeState = SYNCH_END) then
+        oDATA_VLD <= '1';
+      else
+        oDATA_VLD <= '0';
+      end if;
+
     end if;
   end process FE_synch_signals_proc;
 
-  sCountRst <= '1' when (sFeState = RESET or sFeState = IDLE) else
-               '0';
-  sCountIntf.en <= sCntIn.slwEn when (sFeState = HOLD or sFeState = SHIFT
-                                      or sFeState = CLOCK_FORWARD) else
-                   '0';
-  sCountIntf.load   <= '0';
-  sCountIntf.preset <= (others => '0');
+  --!Counters default
+  sChCount.load   <= '0';
+  sDcCount.load   <= '0';
+  sS2cCount.load  <= '0';
+  sChCount.preset <= (others => '0');
+  sDcCount.preset <= (others => '0');
+  sS2cCount.preset<= (others => '0');
+
+  sChCountRst <= '1' when (sFeState = RESET or sFeState = IDLE
+                           or sFeState = SHIFT) else
+                 '0';
+  sChCount.en <= sCntIn.slwEn when (sFeState = FIRST_CLOCK
+                                    or sFeState = CLOCK_FORWARD) else
+                 '0';
   --! @brief Multi-purpose counter to implement delays in the FSM
-  delay_timer : counter
+  CH_COUNTER : counter
     generic map(
       pOVERLAP  => "Y",
-      pBUSWIDTH => cCOUNT_INTERFACE
+      pBUSWIDTH => cCH_COUNT_WIDTH
       )
     port map(
       iCLK   => iCLK,
-      iRST   => sCountRst,
-      iEN    => sCountIntf.en,
-      iLOAD  => sCountIntf.load,
-      iDATA  => sCountIntf.preset,
-      oCOUNT => sCountIntf.count,
-      oCARRY => sCountIntf.carry
+      iRST   => sChCountRst,
+      iEN    => sChCount.en,
+      iLOAD  => sChCount.load,
+      iDATA  => sChCount.preset,
+      oCOUNT => sChCount.count,
+      oCARRY => sChCount.carry
+      );
+
+  sDcCountRst <= '1' when (sFeState = RESET or sFeState = IDLE) else
+                 '0';
+  sDcCount.en <= sCntIn.slwEn when (sFeState = SYNCH_END) else
+                 '0';
+  --!@brief Count the number of FEs in the daisy chain
+  DC_COUNTER : counter
+    generic map(
+      pOVERLAP  => "Y",
+      pBUSWIDTH => cDC_COUNT_WIDTH
+      )
+    port map(
+      iCLK   => iCLK,
+      iRST   => sDcCountRst,
+      iEN    => sDcCount.en,
+      iLOAD  => sDcCount.load,
+      iDATA  => sDcCount.preset,
+      oCOUNT => sDcCount.count,
+      oCARRY => sDcCount.carry
+      );
+
+  sS2cCountRst <= '1' when (sFeState /= SHIFT) else
+                  '0';
+  sS2cCount.en <= sCntIn.slwEn when (sFeState = SHIFT) else
+                  '0';
+  --!@brief Count the slwClk cycles between the shift and clk assertion
+  S2C_COUNTER : counter
+    generic map(
+      pOVERLAP  => "Y",
+      pBUSWIDTH => cS2C_COUNT_WIDTH
+      )
+    port map(
+      iCLK   => iCLK,
+      iRST   => sS2cCountRst,
+      iEN    => sS2cCount.en,
+      iLOAD  => sS2cCount.load,
+      iDATA  => sS2cCount.preset,
+      oCOUNT => sS2cCount.count,
+      oCARRY => sS2cCount.carry
       );
 
   --! @brief Add FFDs to the combinatorial signals \n
@@ -188,12 +274,13 @@ begin
   --! @brief Combinatorial FSM to operate the FEs
   --! @param[in] sFeState  Current state of the FSM
   --! @param[in] sCntIn Input signals of the control interface
-  --! @param[in] sCountIntf.count Output of the delay counter
+  --! @param[in] sChCount.count Output of the delay counter
   --! @return sNextFeState  Next state of the FSM
   --! @todo Add a control of the shift_out_b from the last FE;
   --! @todo Sensitivity list can be substituted by 'all' (VHDL-2008)
   --! @vhdlflow
-  FSM_FE_proc : process (sFeState, sCntIn, sCountIntf.count)
+  FSM_FE_proc : process (sFeState, sCntIn, sChCount.count,
+                        sDcCount.count, sS2cCount.count)
   begin
     case (sFeState) is
       --Reset the FSM
@@ -216,14 +303,25 @@ begin
       when HOLD =>
         sNextFeState <= wait4en(sCntIn.slwEn, HOLD, SHIFT);
 
-      --Assert the SHIFT signal
+      --Assert the SHIFT signal without forwarding clock
       when SHIFT =>
-        sNextFeState <= wait4en(sCntIn.slwEn, SHIFT, CLOCK_FORWARD);
+        if (sS2cCount.count <
+                  int2slv(cFE_SHIFT_2_CLK-1, sS2cCount.count'length)) then
+          --Wait until the  delay is over
+          sNextFeState <= SHIFT;
+        else
+          --Delay concluded
+          sNextFeState <= wait4en(sCntIn.slwEn, SHIFT, FIRST_CLOCK);
+        end if;
 
-      --Send the clock to the FE(s)
+      --First clock forwarded to the FE
+      when FIRST_CLOCK =>
+        sNextFeState <= wait4en(sCntIn.slwEn, FIRST_CLOCK, CLOCK_FORWARD);
+
+      --Send the remaining clocks to the FE(s)
       when CLOCK_FORWARD =>
-        if (sCountIntf.count <
-            int2slv(cFE_CLOCK_CYCLES, sCountIntf.count'length)) then
+        if (sChCount.count <
+            int2slv(cFE_CHANNELS-1, sChCount.count'length)) then
           sNextFeState <= CLOCK_FORWARD;
         else
           sNextFeState <= SYNCH_END;
@@ -231,7 +329,14 @@ begin
 
       --Wait for the slow clock enable before ending the readout
       when SYNCH_END =>
-        sNextFeState <= wait4en(sCntIn.slwEn, SYNCH_END, COMPLETE);
+        if (sDcCount.count <
+                  int2slv(cFE_DAISY_CHAIN_DEPTH-1, sDcCount.count'length)) then
+          --Still other FEs in the chain
+          sNextFeState <= wait4en(sCntIn.slwEn, SYNCH_END, SHIFT);
+        else
+          --No more FEs to readout
+          sNextFeState <= wait4en(sCntIn.slwEn, SYNCH_END, COMPLETE);
+        end if;
 
       when COMPLETE =>
         sNextFeState <= IDLE;

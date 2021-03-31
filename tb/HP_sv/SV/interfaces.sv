@@ -90,3 +90,23 @@ interface CntIntf (input clk, input rst);
   );
 
 endinterface : CntIntf
+
+// Configuration ports to the MSD subpart
+interface msdConfigIntf();
+  logic [15:0] feClkDuty;
+  logic [15:0] feClkDiv;
+  logic [15:0] adcClkDuty;
+  logic [15:0] adcClkDiv;
+  logic [15:0] cfgPlane;
+  logic [31:0] intTrgPeriod;
+  logic [15:0] trg2Hold;
+
+  modport FPGA(
+    input feClkDuty, feClkDiv, adcClkDuty, adcClkDiv, cfgPlane, intTrgPeriod, trg2Hold
+  );
+
+  modport HPS(
+    output feClkDuty, feClkDiv, adcClkDuty, adcClkDiv, cfgPlane, intTrgPeriod, trg2Hold
+  );
+
+endinterface : msdConfigIntf
