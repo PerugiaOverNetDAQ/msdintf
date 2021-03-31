@@ -25,46 +25,49 @@ shift-registers, ...) that are used in the other modules.
 The gateware is organized in packages to group parameters, types declarations,
 and components declarations.
 In particular, there are two packages:
+
 - **FOOTpackage.vhd**: Main package.
 - **basic_functions/basic_package.vhd**: Package containing basic functions and tools.
 
 
 # Specifications for the FE-ADC sequencer
 
-- The system shall react to an **external trigger**
-- The system shall produce an **internal periodic trigger** for calibration
+1. The system shall react to an **external trigger**
+2. The system shall produce an **internal periodic trigger** for calibration
 purposes
-  - The frequency of this trigger shall be settable via a register
-- Both trigger shall be delayed before reaching the actual interface modules
+	- The frequency of this trigger shall be settable via a register
+3. Both triggers shall be delayed before reaching the actual interface modules
   - The delay shall be settable via a configuration register
-- During the whole readout operation, the system shall assert a **busy line**
+4. During the whole readout operation, the system shall assert a **busy line**
 to the central DAQ
-- A detector board (hybrid) represents one half plane. In each hybrid there are:
+5. A detector board (hybrid) represents one half plane. In each hybrid there are:
   - 1x 640-channel microstrip detector
   - 10x FEs grouped in 5 subsets of 2 FEs each, connected in a daisy-chain
-- An ADC board reads out two hybrids, to form an X-Y plane.
+6. An ADC board reads out two hybrids, to form an X-Y plane.
   - 10x ADCs digitize the 20x FE outputs
 	  - 1x ADC is connected to a group of 2x FEs
 
+
 Front-Ends and ADCs models:
+
 - FE: IDEAS IDE1140: 64-channel silicon-strip readout with analog mux output
 - ADC: AD7276
 
 ---
 Once a trigger occurs, the sequencer shall perform the following steps:
 
-1. **Assert the hold** line of the FEs
-2. **Forward the clock** to the FEs and to the ADCs
+7. **Assert the hold** line of the FEs
+8. **Forward the clock** to the FEs and to the ADCs
 	- The FEs will shift their analog output into the ADCs
-3. **Collect the digital output** from the ADCs
-4. ADCs and FEs should have **synchronous clocks**
-	1. Variable frequency, settable by two registers
-	2. FEs should have a clock divider greater than ADCs by a factor 18, at least
-5. The clock of the FE shall have a duty-cycle lower than 50%, in order to avoid ringing at the sampling
+9. **Collect the digital output** from the ADCs
+10. ADCs and FEs should have **synchronous clocks**
+	- Variable frequency, settable by two registers
+	- FEs should have a clock divider greater than ADCs by a factor 18, at least
+11. The clock of the FE shall have a duty-cycle lower than 50%, in order to avoid ringing at the sampling
 
 ---
 
 *Desiderata:*
 
 1.	[] Compression algorithm
-	1.	There is the AMS one that may be implemented in FPGA
+	-	There is the AMS one that may be implemented in FPGA
