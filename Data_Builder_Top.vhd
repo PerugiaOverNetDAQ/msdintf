@@ -77,7 +77,10 @@ begin
   DATA_VALID   <= sDATA_VALID;
   END_OF_EVENT <= sEND_OF_EVENT;
   oDATA        <= soDATA;
-  oCNT         <= sCntOut;
+  oCNT.busy    <= sCntOut.busy or sExtTrigDelBusy;
+  oCNT.error   <= sCntOut.error;
+  oCNT.reset   <= sCntOut.reset;
+  oCNT.compl   <= sCntOut.compl;
   oCAL_TRIG    <= sCalTrig;
   oFE0         <= soFE0;
   oFE1         <= soFE1;

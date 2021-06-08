@@ -84,17 +84,18 @@ begin
   data_det_gen :
 
   for i in 0 to cTOTAL_ADCs-1 generate
-
-
-    oMULTI_FIFO(i).rd <= '1'when data_detected = '1' and state = IDLE else
-                         '0';
+    oMULTI_FIFO(i).data <= (others => '0');
+    oMULTI_FIFO(i).wr   <= '0';
+    oMULTI_FIFO(i).rd   <= '1' when data_detected = '1' and state = IDLE else
+                           '0';
   end generate data_det_gen;
   ------------------------------------------------------------------------------
 
 
 
 
-
+  sFifoOut.aempty <= '1';
+  sFifoOut.afull  <= '0';
   ---components   -----------------------------------------
   ADC_FIFO : entity work.parametric_fifo_dp
     generic map(
@@ -136,7 +137,7 @@ begin
     end if;  --rising_edge
   end process fsm;
 
-  FSM_FIFO_proc : process (state, s_used_w, s_used_r)
+  FSM_FIFO_proc : process (state, s_used_w, s_used_r, data_detected, count)
   begin
     case (state) is
       --Reset the FSM

@@ -295,7 +295,8 @@ begin
   --! @param[in] sFsmSynchEn Synch this FSM to the FSM of the FSM
   --! @return sNextHpState  Next state of the FSM
   --! @vhdlflow
-  FSM_HP_proc : process(sHpState, sCntIn, sFeOCnt, sAdcOCnt, sFsmSynchEn)
+  FSM_HP_proc : process(sHpState, sCntIn, sFeOCnt, sAdcOCnt, sFsmSynchEn,
+                        sFeDataVld)
   begin
     case (sHpState) is
       --Reset the FSM
