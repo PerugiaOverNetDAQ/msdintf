@@ -4,14 +4,12 @@
 
 library IEEE;
 use IEEE.std_logic_1164.all;
---use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
 
---use work.SERIALIZE_PKG.all;
 use work.basic_package.all;
-use work.FOOtpackage.all;  --file which contain constant and logic values for all the project
+use work.FOOTpackage.all;  --file which contain constant and logic values for all the project
 use work.DAQ_Package.all;
 
 --!@brief Combine the ADC 16-bit FIFOs into one output 32-bit FIFO
@@ -46,14 +44,10 @@ architecture std of Data_Builder is
   signal s_used_w       : std_logic_vector(ceil_log2(cTOTAL_ADC_WORDS_NUM)-1 downto 0);
   signal s_used_r       : std_logic_vector(ceil_log2(cTOTAL_ADC_WORDS_NUM/2)-1 downto 0);
 
-
-
   subtype index0 is natural range 0 to cTOTAL_ADCs;
   subtype index1 is natural range 0 to (cTOTAL_ADCs*2);
   subtype index2 is natural range 0 to (cFE_CLOCK_CYCLES*cTOTAL_ADCs);
   subtype index3 is natural range 0 to (cFE_CLOCK_CYCLES*cTOTAL_ADCs);
-
-
 
   type tFsmDB is (RESET, IDLE, PKT_LENGTH, HEADER_1, HEADER_2, HEADER_3, HEADER_4,
                   WRITE_WORD, OUT_VALID, FOOTER_1, FOOTER_2, FOOTER_3, EVENT_END
@@ -87,16 +81,13 @@ begin
     oMULTI_FIFO(i).data <= (others => '0');
     oMULTI_FIFO(i).wr   <= '0';
     oMULTI_FIFO(i).rd   <= '1' when data_detected = '1' and state = IDLE else
-                           '0';
+                         '0';
   end generate data_det_gen;
   ------------------------------------------------------------------------------
 
-
-
-
   sFifoOut.aempty <= '1';
   sFifoOut.afull  <= '0';
-  ---components   -----------------------------------------
+  --- components   -----------------------------------------
   ADC_FIFO : entity work.parametric_fifo_dp
     generic map(
       pDEPTH        => cTOTAL_ADC_WORDS_NUM,
@@ -208,26 +199,20 @@ begin
   --variable count : integer range 0 to cTOTAL_ADCs-1 := 0;
   begin
     if (rising_edge(sCLK)) then
-
       if (state = WRITE_WORD) then
-        s_wr <= '1';
-
+        s_wr  <= '1';
         count <= count +1;
       else
         s_wr  <= '0';
         count <= 0;
       end if;
-
       data_long <= sFifoIn_o(count).q;
-
     end if;
   end process;
 
   footer_header : process (state, sFifoOut) is
   begin
-
     case state is
-
       when PKT_LENGTH =>
         oDATA.q      <= int2slv((cTOTAL_ADCs*cFE_CLOCK_CYCLES)/2 +8, oDATA.q'length);
         s_DATA_VALID <= '1';
@@ -285,8 +270,6 @@ begin
     else
       s_end_of_event <= '0';
     end if;
-
   end process;
-
 
 end std;

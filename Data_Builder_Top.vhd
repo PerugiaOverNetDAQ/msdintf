@@ -16,21 +16,21 @@ use work.FOOTpackage.all;
 --!@details Top to interconnect all of the u-strip-related modules
 entity Data_Builder_Top is
   port (
-    iCLK         : in  std_logic;       --!Main clock
-    iRST         : in  std_logic;       --!Main reset
+    iCLK         : in  std_logic;          --!Main clock
+    iRST         : in  std_logic;          --!Main reset
     -- control interface
-    iEN          : in  std_logic;       --!Enable
-    iTRIG        : in  std_logic;       --!External trigger
-    oCNT         : out tControlIntfOut; --!Control signals in output
-    oCAL_TRIG    : out std_logic;       --!Internal trigger output
-    iMSD_CONFIG  : in  msd_config;   --!Configuration from the control registers
+    iEN          : in  std_logic;          --!Enable
+    iTRIG        : in  std_logic;          --!External trigger
+    oCNT         : out tControlIntfOut;    --!Control signals in output
+    oCAL_TRIG    : out std_logic;          --!Internal trigger output
+    iMSD_CONFIG  : in  msd_config;         --!Configuration from the control registers
     -- First FE-ADC chain ports
-    oFE0         : out tFpga2FeIntf;    --!Output signals to the FE1
-    oADC0        : out tFpga2AdcIntf;   --!Output signals to the ADC1
+    oFE0         : out tFpga2FeIntf;       --!Output signals to the FE1
+    oADC0        : out tFpga2AdcIntf;      --!Output signals to the ADC1
     -- Second FE-ADC chain ports
-    oFE1         : out tFpga2FeIntf;        --!Output signals to the FE2
-    oADC1        : out tFpga2AdcIntf;       --!Output signals to the ADC2
-    iMULTI_ADC   : in  tMultiAdc2FpgaIntf;  --!Input signals from the ADC1
+    oFE1         : out tFpga2FeIntf;       --!Output signals to the FE2
+    oADC1        : out tFpga2AdcIntf;      --!Output signals to the ADC2
+    iMULTI_ADC   : in  tMultiAdc2FpgaIntf; --!Input signals from the ADC1
     --to event builder signals
     oDATA        : out tAllFifoOut_ADC;
     DATA_VALID   : out std_logic;
