@@ -96,13 +96,15 @@ begin
   sCntIn.slwClk <= '0';
   sCntIn.slwEn  <= '0';
 
-  trig_edge : edge_detector
-    port map(
-      iCLK    => iCLK,
-      iRST    => '0',
-      iD      => iTRIG,
-      oEDGE_R => sTrigRising
-      );
+  --!@test Trigger already filtered from stationary signals
+  --trig_edge : edge_detector
+  --  port map(
+  --    iCLK    => iCLK,
+  --    iRST    => '0',
+  --    iD      => iTRIG,
+  --    oEDGE_R => sTrigRising
+  --    );
+	sTrigRising <= iTRIG;
   ------------------------------------------------------------------------------
 
   --!@brief Pulse generator for calibration triggers
