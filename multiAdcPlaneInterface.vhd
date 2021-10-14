@@ -1,5 +1,8 @@
 --!@file multiAdcPlaneInterface.vhd
 --!@brief Interface with the FEs and ADCs of one plane of the detector
+--!
+--!@details Create, or forward, a clock for the FEs and ADCs of a plane of the
+--! ustrip detector.\n\n **Reset duration shall be no less than 2 clock cycles**
 --!@author Mattia Barbanera, mattia.barbanera@infn.it
 --!@date 16/06/2020
 --!@version 0.1 - 03/07/2020 - SV Testbench
@@ -13,9 +16,7 @@ use ieee.math_real.all;
 use work.basic_package.all;
 use work.FOOTpackage.all;
 
---!@brief Interface with the FEs and ADCs of one plane of the detector
---!@details Create, or forward, a clock for the FEs and ADCs of a plane of the
--- ustrip detector
+--!@copydoc multiAdcPlaneInterface.vhd
 entity multiAdcPlaneInterface is
   generic (
     pACTIVE_EDGE : string := "F"        --!"F": falling, "R": rising
@@ -45,6 +46,7 @@ entity multiAdcPlaneInterface is
     );
 end multiAdcPlaneInterface;
 
+--!@copydoc multiAdcPlaneInterface.vhd
 architecture std of multiAdcPlaneInterface is
   signal sCntOut  : tControlIntfOut;
   signal sCntIn   : tControlIntfIn;
