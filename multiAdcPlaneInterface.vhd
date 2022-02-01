@@ -31,6 +31,7 @@ entity multiAdcPlaneInterface is
     iFE_CLK_DUTY  : in  std_logic_vector(15 downto 0);  --!FE SlowClock duty cycle
     iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
     iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
+    iADC_DELAY    : in  std_logic_vector(15 downto 0);  --!Delay from the FE falling edge and the start of the AD conversion
     iCFG_FE       : in  std_logic_vector(3 downto 0);   --!FE configurations
     -- FE interface
     oFE0          : out tFpga2FeIntf;   --!Output signals to the FE0

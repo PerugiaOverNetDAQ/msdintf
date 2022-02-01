@@ -28,6 +28,7 @@ package FOOTpackage is
   constant cADC_CLK_DIV  : std_logic_vector(15 downto 0) := int2slv(2, 16);  --!ADC SlowClock divider
   constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(4, 16);  --!FE SlowClock duty cycle
   constant cADC_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(4, 16);  --!ADC SlowClock duty cycle
+  constant cADC_DELAY    : std_logic_vector(15 downto 0) := int2slv(2, 16);  --!Delay from the FE falling edge and the start of the AD conversion
   --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
   constant cCFG_PLANE    : std_logic_vector(15 downto 0) := x"0007";  --!uStrip configurations
   constant cTRG_PERIOD   : std_logic_vector(31 downto 0) := x"0000FFFF";  --!Clock cycles between two internal triggers
@@ -114,6 +115,7 @@ package FOOTpackage is
     cfgPlane     : std_logic_vector(15 downto 0);  --!uStrip configuration
     intTrgPeriod : std_logic_vector(31 downto 0);  --!Clock-cycles between two internal triggers
     trg2Hold     : std_logic_vector(15 downto 0);  --!Clock-cycles between an external trigger and the FE-HOLD signal
+    adcDelay     : std_logic_vector(15 downto 0);  --!Delay from the FE falling edge and the start of the AD conversion
   end record msd_config;
 
   --!Multiple AD7276A ADCs output signals and FIFOs
@@ -190,6 +192,7 @@ package FOOTpackage is
       iFE_CLK_DUTY  : in  std_logic_vector(15 downto 0);  --!FE SlowClock duty cycle
       iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
       iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
+      iADC_DELAY    : in  std_logic_vector(15 downto 0);  --!Delay from the FE falling edge and the start of the AD conversion
       iCFG_FE       : in  std_logic_vector(3 downto 0);   --!FE configurations
       --# {{FE Interface}}
       oFE0          : out tFpga2FeIntf;   --!Output signals to the FE0
@@ -225,9 +228,9 @@ package FOOTpackage is
       oFE1         : out tFpga2FeIntf;  --!Output signals to the FE2
       oADC1        : out tFpga2AdcIntf;    --!Output signals to the ADC2
       --# {{Event Builder Interface}}
-      oDATA        : out tAllFifoOut_ADC;
-      DATA_VALID   : out std_logic;
-      END_OF_EVENT : out std_logic
+      oDATA         : out tAllFifoOut_ADC;
+      oDATA_VALID   : out std_logic;
+      oEND_OF_EVENT : out std_logic
       );
   end component Data_Builder_Top;
 
