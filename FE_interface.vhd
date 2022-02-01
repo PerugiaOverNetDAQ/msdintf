@@ -1,8 +1,9 @@
 --!@file FE_interface.vhd
 --!@brief Low-level interface of the uStrip FrontEnd IDE1140_DS
+--!@details See the FE datasheet for additional details on the interface
+--!@todo The deassertion of enable input shall stop the FSM
 --!@author Mattia Barbanera, mattia.barbanera@infn.it
 --!@date 28/01/2020
---!@version 0.3 - 10/06/2020 - SV testbench
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -13,9 +14,7 @@ use ieee.math_real.all;
 use work.basic_package.all;
 use work.FOOTpackage.all;
 
---!@brief Low-level interface of the uStrip FrontEnd IDE1140_DS
---!@details See the FE datasheet for additional details on the interface
---!@todo The deassertion of enable input shall stop the FSM
+--!@copydoc FE_interface.vhd
 entity FE_interface is
   port (
     iCLK      : in  std_logic;          --!Main clock
@@ -33,6 +32,7 @@ entity FE_interface is
     );
 end FE_interface;
 
+--!@copydoc FE_interface.vhd
 architecture std of FE_interface is
   constant cCH_COUNT_WIDTH  : natural
                                 := ceil_log2(cFE_CHANNELS+cFE_SHIFT_2_CLK+1)+1;
@@ -123,7 +123,6 @@ begin
     if (rising_edge(iCLK)) then
       sFpga2Fe.TestOn <= iCNT_Test;
 
-      --!@bug not clear if the hold has to be hold or is just a pulse
       if (sFeState = HOLD or sFeState = SHIFT or sFeState = FIRST_CLOCK
           or sFeState = CLOCK_FORWARD or sFeState = SYNCH_END) then
         sFpga2Fe.Hold <= '1';
@@ -276,9 +275,6 @@ begin
   --! @param[in] sCntIn Input signals of the control interface
   --! @param[in] sChCount.count Output of the delay counter
   --! @return sNextFeState  Next state of the FSM
-  --! @todo Add a control of the shift_out_b from the last FE;
-  --! @todo Sensitivity list can be substituted by 'all' (VHDL-2008)
-  --! @vhdlflow
   FSM_FE_proc : process (sFeState, sCntIn, sChCount.count,
                         sDcCount.count, sS2cCount.count)
   begin
@@ -295,7 +291,7 @@ begin
           sNextFeState <= IDLE;
         end if;
 
-      --Wait for the slow clock enable before starting
+      --Wait for the slow-clock enable before starting
       when SYNCH_START =>
         sNextFeState <= wait4en(sCntIn.slwEn, SYNCH_START, HOLD);
 
