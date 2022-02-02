@@ -1,0 +1,38 @@
+{head:{
+  text:'Readout Operations for a daisy-chain of two IDE1140',
+  //tick:0,
+  every:1
+ },
+ signal: [
+   {                    node:'J................', phase:-0.},
+   {name:'hold_b',      wave:'1.0........|...........1...', phase:-0.,
+                        node:'P.Q..............'},
+   {name:'clk_b',       wave:'1.N..........1', phase: 0.2, period: 2,
+                        node:'.................'},
+   ['First IDE1140',
+   {name:'shift_in_b',  wave:'1..0.1.....|...............', phase:-0.,
+                        node:'...........................'},
+   {name:'shift_out_b', wave:'1..........|.0.1...........', phase:-0.,
+                        node:'...........................'},
+   {name:'diff_out',    wave:'z...2.2.2|2.z..............', data:'0 1 ... 63',
+    					node:'...........................', phase:-0.},
+   {                    node:'...........................', phase:0.}
+   ],
+   ['Second IDE1140',
+   {name:'shift_in_b',  wave:'1............0.1...|.......', phase:-0.,
+                        node:'...........................'},
+   {name:'shift_out_b', wave:'1..................|...0.1.', phase:-0.,
+                        node:'...........................'},
+   {name:'diff_out',    wave:'z.............2.2.2|2.z....', data:'64 65 ... 127',
+    					node:'...........................', phase:-0.},
+   {                    node:'K..........................', phase:0.}
+   ]
+ ],
+ edge: [
+   'J-K', 'K Trigger', 'P+Q Peaking time'
+  ],
+ foot:{
+  //text:'',
+  tock:0
+ }
+}
