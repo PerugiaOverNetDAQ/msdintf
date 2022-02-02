@@ -29,7 +29,7 @@ package FOOTpackage is
   constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(20, 16);  --!FE SlowClock duty cycle
   constant cADC_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(1, 16);  --!ADC SlowClock duty cycle
   constant cADC_DELAY    : std_logic_vector(15 downto 0) := int2slv(2, 16);  --!Delay from the FE falling edge and the start of the AD conversion
-  constant cBUSY_LEN     : std_logic_vector(15 downto 0) := int2slv(3, 16);  --!320-ns duration of busy extension time
+  constant cBUSY_LEN     : std_logic_vector(15 downto 0) := int2slv(42, 16);  --!320-ns duration of busy extension time
   --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
   constant cCFG_PLANE    : std_logic_vector(15 downto 0) := x"0007";  --!uStrip configurations
   constant cTRG_PERIOD   : std_logic_vector(31 downto 0) := x"0000FFFF";  --!Clock cycles between two internal triggers

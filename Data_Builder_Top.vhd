@@ -156,7 +156,6 @@ begin
       );
 
   --!@brief Collects data from the MSD and assembles them in a single packet
-  --@todo Simplify it!
   EVENT_BUILDER : Data_Builder
     port map (
       iCLK          => iCLK,
