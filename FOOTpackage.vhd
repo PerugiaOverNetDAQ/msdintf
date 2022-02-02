@@ -16,7 +16,7 @@ use work.basic_package.all;
 package FOOTpackage is
   constant cADC_DATA_WIDTH       : natural := 16;  --!ADC data-width
   constant cADC_FIFO_DEPTH       : natural := 256;  --!ADC FIFO number of words
-  constant cTOTAL_ADC_WORDS_NUM  : natural := 2048;  --! numero totale massimo di parole da 16 bit nella fifo finale 1280??
+  constant cCOLL_FIFO_DEPTH      : natural := 2048;  --! numero totale massimo di parole da 16 bit nella fifo finale 1280??
   constant cFE_DAISY_CHAIN_DEPTH : natural := 2;   --!FEs in a daisy chain
   constant cFE_CHANNELS          : natural := 64;  --!Channels per FE
   constant cFE_CLOCK_CYCLES      : natural := cFE_DAISY_CHAIN_DEPTH*cFE_CHANNELS;  --!Number of clock cycles to feed a chain
@@ -98,13 +98,13 @@ package FOOTpackage is
   end record tFifoOut_ADC;
 
   --!Output signals of the collector FIFOs
-  type tAllFifoOut_ADC is record
+  type tCollFifoOut is record
     q      : std_logic_vector((2*cADC_DATA_WIDTH)-1 downto 0);  --!Output data port
     aEmpty : std_logic;                 --!Almost empty
     empty  : std_logic;                 --!Empty
     aFull  : std_logic;                 --!Almost full
     full   : std_logic;                 --!Full
-  end record tAllFifoOut_ADC;
+  end record tCollFifoOut;
 
   --!Configuration ports to the MSD subpart
   type msd_config is record
@@ -124,10 +124,6 @@ package FOOTpackage is
   type tMultiAdc2FpgaIntf is array (0 to cTOTAL_ADCS-1) of tAdc2FpgaIntf;
   type tMultiAdcFifoIn is array (0 to cTOTAL_ADCS-1) of tFifoIn_ADC;
   type tMultiAdcFifoOut is array (0 to cTOTAL_ADCS-1) of tFifoOut_ADC;
-
-  --!
-  type fifo_type is array (0 to cTOTAL_ADC_WORDS_NUM - 1)of std_logic_vector((2* cTOTAL_ADCs * cADC_DATA_WIDTH) - 1 downto 0);
-  subtype index_type is natural range fifo_type'range;
 
   --!Initialization constants for the upper types
   constant c_FROM_FIFO_INIT : tFifoOut_ADC := (full   => '0',
@@ -230,7 +226,7 @@ package FOOTpackage is
       oFE1         : out tFpga2FeIntf;  --!Output signals to the FE2
       oADC1        : out tFpga2AdcIntf;    --!Output signals to the ADC2
       --# {{Event Builder Interface}}
-      oDATA         : out tAllFifoOut_ADC;
+      oDATA         : out tCollFifoOut;
       oDATA_VALID   : out std_logic;
       oEND_OF_EVENT : out std_logic
       );
@@ -247,7 +243,7 @@ package FOOTpackage is
       iMULTI_FIFO   : in  tMultiAdcFifoOut;
       oMULTI_FIFO   : out tMultiAdcFifoIn;
       --#{{HPS Interface}}
-      oDATA         : out tAllFifoOut_ADC;
+      oCOLL_FIFO    : out tCollFifoOut;
       oDATA_VALID   : out std_logic;
       oEND_OF_EVENT : out std_logic
       );

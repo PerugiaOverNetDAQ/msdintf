@@ -32,7 +32,7 @@ entity Data_Builder_Top is
     oADC1        : out tFpga2AdcIntf;      --!Output signals to the ADC2
     iMULTI_ADC   : in  tMultiAdc2FpgaIntf; --!Input signals from the ADC1
     --to event builder signals
-    oDATA         : out tAllFifoOut_ADC;
+    oDATA         : out tCollFifoOut;
     oDATA_VALID   : out std_logic;
     oEND_OF_EVENT : out std_logic
     );
