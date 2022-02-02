@@ -67,6 +67,7 @@ architecture std of multiAdcPlaneInterface is
   signal sAdcICnt     : tControlIntfIn;
   signal sAdcOFifo    : tMultiAdcFifoIn;
   signal sAdcIntStart : std_logic;
+  signal sAdcStartDel : std_logic;
 
   -- Clock dividers
   signal sFeCdRis, sFeCdFal   : std_logic;
@@ -148,8 +149,11 @@ begin
     iSTART => sAdcIntStart,
     iDELAY => iADC_DELAY,
     oBUSY  => open,
-    oOUT   => sAdcICnt.start
+    oOUT   => sAdcStartDel
   );
+
+  sAdcICnt.start <= sAdcIntStart when iADC_DELAY = 0 else
+                    sAdcStartDel;
   ------------------------------------------------------------------------------
 
   sFeRst <= '1' when (sHpState = RESET) else
