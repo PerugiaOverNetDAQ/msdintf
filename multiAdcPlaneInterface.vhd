@@ -139,6 +139,9 @@ begin
 
   --!@brief Delay the ADC start readout of iADC_DELAY clock cycles
   ADC_start_delay : delay_timer
+  generic map(
+      pWIDTH => 16
+    )
   port map (
     iCLK   => iCLK,
     iRST   => iRST,

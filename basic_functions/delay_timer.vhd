@@ -1,8 +1,6 @@
 --!@file delay_timer.vhd
 --!@brief Delay an input pulse of the specified clock cycles
 --!@author Mattia Barbanera, mattia.barbanera@infn.it
---!@date 10/06/2020
---!@version 0.1 - 10/06/2020 - Stand-alone simulation
 
 library IEEE;
 use IEEE.std_logic_1164.all;
@@ -12,18 +10,22 @@ use ieee.numeric_std.all;
 
 use work.basic_package.all;
 
---!@brief Delay an input pulse of the specified clock cycles
+--!@copydoc delay_timer.vhd
 entity delay_timer is
+  generic(
+    pWIDTH : natural := 16
+  );
   port(
     iCLK    : in  std_logic; --!Main clock
     iRST    : in  std_logic; --!Reset
     iSTART  : in  std_logic; --!Start
-    iDELAY  : in  std_logic_vector(15 downto 0); --!Delay in iCLK cycles
+    iDELAY  : in  std_logic_vector(pWIDTH-1 downto 0); --!Delay in iCLK cycles
     oBUSY   : out std_logic; --!Busy
     oOUT    : out std_logic  --!Asserted after iDELAY clock cycles
   );
 end delay_timer;
 
+--!@copydoc delay_timer.vhd
 architecture std of delay_timer is
   signal sCount : std_logic_vector(iDELAY'length-1 downto 0);
   signal sStartEvent : std_logic;
@@ -33,8 +35,6 @@ architecture std of delay_timer is
 
 begin
   --!@brief Detects the edges of the iSTART signals, synchronous to iCLK
-  --!@test By controlling only the iSTART port should be enough,
-  --!@test without the edge detector; it can be less secure.
   en_generator : edge_detector
     port map(
       iCLK    => iCLK,
@@ -47,7 +47,7 @@ begin
 
   oBUSY <= sEn;
   --!@brief Enable the counter at the rising edge of iSTART and
-  --!@brief Disable the counter when delay is enough
+  --!       Disable the counter when delay is enough
   en_proc : process(iCLK)
   begin
     if (rising_edge(iCLK)) then

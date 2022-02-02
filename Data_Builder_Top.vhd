@@ -51,18 +51,20 @@ architecture std of Data_Builder_Top is
   signal sHpCfg   : std_logic_vector (3 downto 0);
   
   --Trigger
-  signal sTrigInt        : std_logic;
-  signal sExtTrigDel     : std_logic;
-  signal sExtTrigDelBusy : std_logic;
-  signal sCalTrig        : std_logic;
+  signal sTrigInt     : std_logic;
+  signal sExtTrigDel  : std_logic;
+  signal sCalTrig     : std_logic;
 
+  --Busy
+  signal sExtTrigDelBusy : std_logic;
+  signal sExtendBusy     : std_logic;
 
 begin
 
   --- Combinatorial assignments ------------------------------------------------
   sFeIn.ShiftOut <= '1';
 
-  oCNT.busy    <= sCntOut.busy or sExtTrigDelBusy;
+  oCNT.busy    <= sCntOut.busy or sExtTrigDelBusy or sExtendBusy;
   oCNT.error   <= sCntOut.error;
   oCNT.reset   <= sCntOut.reset;
   oCNT.compl   <= sCntOut.compl;
@@ -97,6 +99,9 @@ begin
 
   --!@brief Delay the external trigger before the FE start
   ext_trig_delay : delay_timer
+    generic map(
+      pWIDTH => 16
+    )
     port map(
       iCLK   => iCLK,
       iRST   => iRST,
@@ -105,6 +110,20 @@ begin
       oBUSY  => sExtTrigDelBusy,
       oOUT   => sExtTrigDel
       );
+
+  --!@brief Extend busy from [320 ns, ~20 ms], in multiples of 320 ns
+  busy_extend : delay_timer
+  generic map(
+    pWIDTH => 20
+  )
+  port map(
+    iCLK   => iCLK,
+    iRST   => iRST,
+    iSTART => sCntOut.compl,
+    iDELAY => iMSD_CONFIG.extendBusy & "0000",
+    oBUSY  => sExtendBusy,
+    oOUT   => open
+    );
 
   --!@brief Low-level multiple ADCs plane interface
   DETECTOR_INTERFACE : multiAdcPlaneInterface
@@ -145,8 +164,8 @@ begin
       iMULTI_FIFO  => sMultiFifoOut,
       oMULTI_FIFO  => sMultiFifoIn,
       oDATA        => oDATA,
-      DATA_VALID   => oDATA_VALID,
-      END_OF_EVENT => oEND_OF_EVENT
+      oDATA_VALID   => oDATA_VALID,
+      oEND_OF_EVENT => oEND_OF_EVENT
       );
 
 

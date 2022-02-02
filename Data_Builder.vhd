@@ -9,19 +9,19 @@ use ieee.numeric_std.all;
 use ieee.math_real.all;
 
 use work.basic_package.all;
-use work.FOOTpackage.all;  --file which contain constant and logic values for all the project
+use work.FOOTpackage.all;
 use work.DAQ_Package.all;
 
 --!@brief Combine the ADC 16-bit FIFOs into one output 32-bit FIFO
 entity Data_Builder is
   port (
-    iCLK         : in  std_logic;
-    iRST         : in  std_logic;
-    iMULTI_FIFO  : in  tMultiAdcFifoOut;
-    oMULTI_FIFO  : out tMultiAdcFifoIn;
-    oDATA        : out tAllFifoOut_ADC;
-    DATA_VALID   : out std_logic;
-    END_OF_EVENT : out std_logic
+    iCLK          : in  std_logic;
+    iRST          : in  std_logic;
+    iMULTI_FIFO   : in  tMultiAdcFifoOut;
+    oMULTI_FIFO   : out tMultiAdcFifoIn;
+    oDATA         : out tAllFifoOut_ADC;
+    oDATA_VALID   : out std_logic;
+    oEND_OF_EVENT : out std_logic
     );
 end Data_Builder;
 
@@ -67,8 +67,8 @@ begin
   oDATA.aEmpty <= sFifoOut.aEmpty;
   oDATA.full   <= sFifoOut.full;
 
-  DATA_VALID   <= s_DATA_VALID;
-  END_OF_EVENT <= s_end_of_event;
+  oDATA_VALID   <= s_DATA_VALID;
+  oEND_OF_EVENT <= s_end_of_event;
   sCLK         <= iCLK;
   sRST         <= iRST;
   data_detected <= not(sFifoIn_o(0).empty or sFifoIn_o(1).empty or sFifoIn_o(2).empty or sFifoIn_o(3).empty

@@ -151,6 +151,7 @@ end component;
   end component;
   -- delay_timer ---------------------------------------------------------------
   component delay_timer is
+    generic(pWIDTH : natural);
     port(iCLK, iRST, iSTART  : in  std_logic;
       oBUSY, oOUT : out std_logic;
       iDELAY : in  std_logic_vector(15 downto 0));
