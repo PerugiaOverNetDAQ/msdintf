@@ -32,7 +32,7 @@ entity Data_Builder_Top is
     oADC1        : out tFpga2AdcIntf;      --!Output signals to the ADC2
     iMULTI_ADC   : in  tMultiAdc2FpgaIntf; --!Input signals from the ADC1
     --to event builder signals
-    oDATA         : out tCollFifoOut;
+    oCOLL_FIFO    : out tCollFifoOut;
     oDATA_VALID   : out std_logic;
     oEND_OF_EVENT : out std_logic
     );
@@ -140,7 +140,7 @@ begin
       iFE_CLK_DUTY  => iMSD_CONFIG.feClkDuty,
       iADC_CLK_DIV  => iMSD_CONFIG.adcClkDiv,
       iADC_CLK_DUTY => iMSD_CONFIG.adcClkDuty,
-      iADC_DELAY    => iMSD_CONFIG.adcDelay;
+      iADC_DELAY    => iMSD_CONFIG.adcDelay,
       iCFG_FE       => sHpCfg,
       -- FE interface
       oFE0          => oFE0,
@@ -159,11 +159,11 @@ begin
   --@todo Simplify it!
   EVENT_BUILDER : Data_Builder
     port map (
-      iCLK         => iCLK,
-      iRST         => iRST,
-      iMULTI_FIFO  => sMultiFifoOut,
-      oMULTI_FIFO  => sMultiFifoIn,
-      oDATA        => oDATA,
+      iCLK          => iCLK,
+      iRST          => iRST,
+      iMULTI_FIFO   => sMultiFifoOut,
+      oMULTI_FIFO   => sMultiFifoIn,
+      oCOLL_FIFO    => oCOLL_FIFO,
       oDATA_VALID   => oDATA_VALID,
       oEND_OF_EVENT => oEND_OF_EVENT
       );

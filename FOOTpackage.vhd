@@ -226,7 +226,7 @@ package FOOTpackage is
       oFE1         : out tFpga2FeIntf;  --!Output signals to the FE2
       oADC1        : out tFpga2AdcIntf;    --!Output signals to the ADC2
       --# {{Event Builder Interface}}
-      oDATA         : out tCollFifoOut;
+      oCOLL_FIFO    : out tCollFifoOut;
       oDATA_VALID   : out std_logic;
       oEND_OF_EVENT : out std_logic
       );
