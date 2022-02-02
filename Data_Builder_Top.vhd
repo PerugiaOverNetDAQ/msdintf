@@ -53,6 +53,7 @@ architecture std of Data_Builder_Top is
   --Trigger
   signal sTrigInt     : std_logic;
   signal sExtTrigDel  : std_logic;
+  signal sTrigDelBusy : std_logic;
   signal sCalTrig     : std_logic;
 
   --Busy
@@ -64,7 +65,7 @@ begin
   --- Combinatorial assignments ------------------------------------------------
   sFeIn.ShiftOut <= '1';
 
-  oCNT.busy    <= sCntOut.busy or sExtTrigDelBusy or sExtendBusy;
+  oCNT.busy    <= sCntOut.busy or sTrigDelBusy or sExtendBusy;
   oCNT.error   <= sCntOut.error;
   oCNT.reset   <= sCntOut.reset;
   oCNT.compl   <= sCntOut.compl;
@@ -80,6 +81,14 @@ begin
   sCntIn.slwEn  <= '0';
 
   ------------------------------------------------------------------------------
+
+  --!@brief delay the Trigger-delay busy
+  busy_delay : process (iCLK)
+  begin
+    if (rising_edge(iCLK)) then
+      sTrigDelBusy <= sExtTrigDelBusy;
+    end if;
+  end process;
 
   --!@brief Pulse generator for calibration triggers
   cal_trigger_gen : pulse_generator
