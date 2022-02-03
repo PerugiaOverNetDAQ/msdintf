@@ -51,42 +51,46 @@ architecture std of Data_Builder_Top is
   signal sHpCfg   : std_logic_vector (3 downto 0);
   
   --Trigger
-  signal sTrigInt     : std_logic;
-  signal sExtTrigDel  : std_logic;
-  signal sTrigDelBusy : std_logic;
-  signal sCalTrig     : std_logic;
+  signal sCalTrigEn : std_logic;
+  signal sCalTrig   : std_logic;
+  signal sTrigMux   : std_logic;
+  signal sTrig      : std_logic;
+  
 
   --Busy
-  signal sExtTrigDelBusy : std_logic;
-  signal sExtendBusy     : std_logic;
+  signal sTrigDelBusy : std_logic;
+  signal sTrigBusy    : std_logic;
+  signal sExtendBusy  : std_logic;
 
 begin
 
-  --- Combinatorial assignments ------------------------------------------------
-  sFeIn.ShiftOut <= '1';
-
-  oCNT.busy    <= sCntOut.busy or sTrigDelBusy or sExtendBusy;
+  --- Combinatorial assignments ------------------------------------------------  
+  oCNT.busy    <= sCntOut.busy or sTrigBusy or sExtendBusy;
   oCNT.error   <= sCntOut.error;
   oCNT.reset   <= sCntOut.reset;
   oCNT.compl   <= sCntOut.compl;
   oCAL_TRIG    <= sCalTrig;
 
-  sHpCfg   <= iMSD_CONFIG.cfgPlane(3 downto 0);
-  sTrigInt <= iMSD_CONFIG.cfgPlane(4);
+  sHpCfg       <= iMSD_CONFIG.cfgPlane(3 downto 0);
+  sCalTrigEn   <= iMSD_CONFIG.cfgPlane(4);
 
-  sCntIn.en    <= iEN;
-  sCntIn.start <= sCalTrig when sTrigInt = '1' else
-                  sExtTrigDel;
+  sCntIn.en     <= iEN;
+  sCntIn.start  <= sTrig;
   sCntIn.slwClk <= '0';
   sCntIn.slwEn  <= '0';
 
+  sTrigMux <= sCalTrig when sCalTrigEn = '1' else
+              iTRIG;
+
   ------------------------------------------------------------------------------
 
-  --!@brief delay the Trigger-delay busy
+  --!@brief delay lines
   busy_delay : process (iCLK)
   begin
     if (rising_edge(iCLK)) then
-      sTrigDelBusy <= sExtTrigDelBusy;
+      sTrigBusy <= sTrigDelBusy;
+      sFeIn.ShiftOut <= '1';
+      sFeIn.initRst  <= sTrigMux;
     end if;
   end process;
 
@@ -95,18 +99,18 @@ begin
     generic map(
       pWIDTH    => 32,
       pPOLARITY => '1',
-      pLENGTH   => 1
+      pLENGTH   => 10
       ) port map(
         iCLK           => iCLK,
         iRST           => iRST,
-        iEN            => sTrigInt,
+        iEN            => sCalTrigEn,
         oPULSE         => sCalTrig,
         oPULSE_RISING  => open,
         oPULSE_FALLING => open,
         iPERIOD        => iMSD_CONFIG.intTrgPeriod
         );
 
-  --!@brief Delay the external trigger before the FE start
+  --!@brief Delay the trigger before the FE start
   ext_trig_delay : delay_timer
     generic map(
       pWIDTH => 16
@@ -114,10 +118,10 @@ begin
     port map(
       iCLK   => iCLK,
       iRST   => iRST,
-      iSTART => iTRIG,
+      iSTART => sTrigMux,
       iDELAY => iMSD_CONFIG.trg2Hold,
-      oBUSY  => sExtTrigDelBusy,
-      oOUT   => sExtTrigDel
+      oBUSY  => sTrigDelBusy,
+      oOUT   => sTrig
       );
 
   --!@brief Extend busy from [320 ns, ~20 ms], in multiples of 320 ns

@@ -53,6 +53,7 @@ package FOOTpackage is
 
   --!IDE1140_DS front-End output signals (to the FPGA)
   type tFe2FpgaIntf is record
+    initRst  : std_logic;
     ShiftOut : std_logic;               -- Active Low
   end record tFe2FpgaIntf;
 
