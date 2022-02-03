@@ -23,6 +23,7 @@ entity multiADC_interface is
     -- control interface
     oCNT  : out tControlIntfOut;          --!Control signals in output
     iCNT  : in  tControlIntfIn;           --!Control signals in input
+    iFAST : in  std_logic;                --!Switch to the fast-data mode
     -- ADC interface
     oADC        : out tFpga2AdcIntf;      --!Signals from the FPGA to the ADCs
     iMULTI_ADC  : in  tMultiAdc2FpgaIntf; --!Signals from the ADCs to the FPGA
@@ -102,7 +103,7 @@ begin
   ADC_synch_signals_proc : process (iCLK)
   begin
     if (rising_edge(iCLK)) then
-      if (sAdcState = SAMPLE) then
+      if (sAdcState = ASSERT_CS or sAdcState = SAMPLE) then
         sFpga2Adc.SClk <= sCntIn.slwClk;
       else
         sFpga2Adc.SClk <= '1';
@@ -129,9 +130,6 @@ begin
       --!@todo How do I check the "when others" statement?
       sCntOut.error <= '0';
 
-      --!@todo The compl flag can be anticipated to the 13th cycle of the ADC /
-      --!to save some conversione time
-      --since the ADC releases its input at that moment
       if (sNextAdcState = WRITE_WORD) then
         sCntOut.compl <= '1';
       else
@@ -195,7 +193,9 @@ begin
         oPAR_DATA => sMultiSr(i).parOut
         );
 
-    sOutWord(i).data <= sMultiSr(i).parOut;
+    sOutWord(i).data <= sMultiSr(i).parOut(cADC_DATA_WIDTH-3 downto 0) & "00"
+                          when (iFAST = '1') else
+                        sMultiSr(i).parOut;
     sOutWord(i).wr   <= '1' when (sAdcState = WRITE_WORD) else
                         '0';
     sOutWord(i).rd   <= '0';
@@ -218,9 +218,9 @@ begin
   --! @param[in] sAdcState Current state of the FSM
   --! @param[in] sCntIn Input signals of the control interface
   --! @param[in] sCountIntf.count Output of the delay counter
+  --! @param[in] iFAST Switch to the fast-data mode of the ADC
   --! @return sNextAdcState  Next state of the FSM
-  --! @vhdlflow
-  FSM_ADC_proc : process (sAdcState, sCntIn, sCountIntf.count)
+  FSM_ADC_proc : process (sAdcState, sCntIn, sCountIntf.count, iFAST)
   begin
     case (sAdcState) is
       --Reset the FSM
@@ -241,12 +241,21 @@ begin
 
       --Sample the incoming 16 bits
       when SAMPLE =>
-        if (sCountIntf.count <
-            int2slv((cADC_DATA_WIDTH-1), sCountIntf.count'length)) then
-          sNextAdcState <= SAMPLE;
+        if iFAST = '1' then
+          if (sCountIntf.count <
+              int2slv((cADC_DATA_WIDTH-3), sCountIntf.count'length)) then
+            sNextAdcState <= SAMPLE;
+          else
+            sNextAdcState <= wait4en(sCntIn.slwEn, SAMPLE, WRITE_WORD);
+          end if;
         else
-          sNextAdcState <= wait4en(sCntIn.slwEn, SAMPLE, WRITE_WORD);
-        end if;
+          if (sCountIntf.count <
+              int2slv((cADC_DATA_WIDTH-1), sCountIntf.count'length)) then
+            sNextAdcState <= SAMPLE;
+          else
+            sNextAdcState <= wait4en(sCntIn.slwEn, SAMPLE, WRITE_WORD);
+          end if;  
+        end if ;
 
       --Write the deserialized word in output
       when WRITE_WORD =>

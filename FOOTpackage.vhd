@@ -168,6 +168,7 @@ package FOOTpackage is
       iRST        : in  std_logic;
       oCNT        : out tControlIntfOut;
       iCNT        : in  tControlIntfIn;
+      iFAST       : in  std_logic;
       --# {{ADC Interface}}
       oADC        : out tFpga2AdcIntf;
       iMULTI_ADC  : in  tMultiAdc2FpgaIntf;
@@ -183,28 +184,29 @@ package FOOTpackage is
       );
     port (
       --# {{clocks|Clock}}
-      iCLK          : in  std_logic;    --!Main clock
+      iCLK          : in  std_logic;
       --# {{control|Control}}
-      iRST          : in  std_logic;    --!Main reset
-      oCNT          : out tControlIntfOut;     --!Control signals in output
-      iCNT          : in  tControlIntfIn;      --!Control signals in input
-      iFE_CLK_DIV   : in  std_logic_vector(15 downto 0);  --!FE SlowClock divider
-      iFE_CLK_DUTY  : in  std_logic_vector(15 downto 0);  --!FE SlowClock duty cycle
-      iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
-      iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
-      iADC_DELAY    : in  std_logic_vector(15 downto 0);  --!Delay from the FE falling edge and the start of the AD conversion
-      iCFG_FE       : in  std_logic_vector(3 downto 0);   --!FE configurations
+      iRST          : in  std_logic;
+      oCNT          : out tControlIntfOut;
+      iCNT          : in  tControlIntfIn;
+      iFE_CLK_DIV   : in  std_logic_vector(15 downto 0);
+      iFE_CLK_DUTY  : in  std_logic_vector(15 downto 0);
+      iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);
+      iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);
+      iADC_DELAY    : in  std_logic_vector(15 downto 0);
+      iCFG_FE       : in  std_logic_vector(3 downto 0);
+      iADC_FAST     : in  std_logic;
       --# {{FE Interface}}
-      oFE0          : out tFpga2FeIntf;   --!Output signals to the FE0
-      oFE1          : out tFpga2FeIntf;   --!Output signals to the FE1
-      iFE           : in  tFe2FpgaIntf;   --!Input signals from the FE
+      oFE0          : out tFpga2FeIntf;
+      oFE1          : out tFpga2FeIntf;
+      iFE           : in  tFe2FpgaIntf;
       --# {{ADC Interface}}
-      oADC0         : out tFpga2AdcIntf;  --!Signals from the FPGA to the 0-4 ADCs
-      oADC1         : out tFpga2AdcIntf;  --!Signals from the FPGA to the 5-9 ADCs
-      iMULTI_ADC    : in  tMultiAdc2FpgaIntf;  --!Signals from the ADCs to the FPGA
+      oADC0         : out tFpga2AdcIntf;
+      oADC1         : out tFpga2AdcIntf;
+      iMULTI_ADC    : in  tMultiAdc2FpgaIntf;
       --# {{Output FIFO Interface}}
-      oMULTI_FIFO   : out tMultiAdcFifoOut;    --!Output interface of a FIFO
-      iMULTI_FIFO   : in  tMultiAdcFifoIn      --!Input interface of a FIFO
+      oMULTI_FIFO   : out tMultiAdcFifoOut;
+      iMULTI_FIFO   : in  tMultiAdcFifoIn
       );
   end component multiAdcPlaneInterface;
 
