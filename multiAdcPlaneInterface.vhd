@@ -221,7 +221,8 @@ begin
         );
   end generate FIFO_GENERATE;
 
-
+  sAdcIntStart <= '1' when sFsmSynchEn = '1' and sFeDataVld = '1' else
+                  '0';
   --!@brief Output signals in a synchronous fashion, without reset
   --!@param[in] iCLK Clock, used on rising edge
   HP_synch_signals_proc : process (iCLK)
@@ -253,11 +254,11 @@ begin
         sFeSlwEn <= '0';
       end if;
 
-      if (sHpState = START_EXTADC_RO) then
-        sAdcIntStart <= '1';
-      else
-        sAdcIntStart <= '0';
-      end if;
+      --if (sNextHpState = START_EXTADC_RO) then
+      --  sAdcIntStart <= '1';
+      --else
+      --  sAdcIntStart <= '0';
+      --end if;
 
       if (sHpState = RESET or sAdcOCnt.compl = '1') then
         sAdcSlwRst <= '1';

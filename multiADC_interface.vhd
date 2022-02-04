@@ -41,7 +41,7 @@ architecture std of multiADC_interface is
   signal sAdc2Fpga : tMultiAdc2FpgaIntf;
   signal sOutWord  : tMultiAdcFifoIn;
 
-  type tFsmAdc is (RESET, IDLE, ASSERT_CS, SAMPLE, WRITE_WORD);
+  type tFsmAdc is (RESET, IDLE, SAMPLE, WRITE_WORD);
   signal sAdcState, sNextAdcState : tFsmAdc;
 
   --!@brief Wait for the enable assertion to change state
@@ -103,13 +103,13 @@ begin
   ADC_synch_signals_proc : process (iCLK)
   begin
     if (rising_edge(iCLK)) then
-      if (sAdcState = ASSERT_CS or sAdcState = SAMPLE) then
+      if (sNextAdcState = SAMPLE) then
         sFpga2Adc.SClk <= sCntIn.slwClk;
       else
         sFpga2Adc.SClk <= '1';
       end if;
 
-      if (sAdcState = ASSERT_CS or sAdcState = SAMPLE) then
+      if (sNextAdcState = SAMPLE) then
         sFpga2Adc.Cs <= '1';
       else
         sFpga2Adc.Cs <= '0';
@@ -136,7 +136,7 @@ begin
         sCntOut.compl <= '0';
       end if;
 
-      if (sAdcState = SAMPLE or sAdcState = ASSERT_CS) then
+      if (sNextAdcState = SAMPLE) then
         sSrEn <= sCntIn.slwEn;
       else
         sSrEn <= '0';
@@ -230,27 +230,23 @@ begin
       --Wait for the start signal to be asserted
       when IDLE =>
         if (sCntIn.en = '1' and sCntIn.start = '1') then
-          sNextAdcState <= ASSERT_CS;
+          sNextAdcState <= SAMPLE;
         else
           sNextAdcState <= IDLE;
         end if;
-
-      --Assert the CS line
-      when ASSERT_CS =>
-        sNextAdcState <= wait4en(sCntIn.slwEn, ASSERT_CS, SAMPLE);
 
       --Sample the incoming 16 bits
       when SAMPLE =>
         if iFAST = '1' then
           if (sCountIntf.count <
-              int2slv((cADC_DATA_WIDTH-3), sCountIntf.count'length)) then
+              int2slv((cADC_DATA_WIDTH-2), sCountIntf.count'length)) then
             sNextAdcState <= SAMPLE;
           else
             sNextAdcState <= wait4en(sCntIn.slwEn, SAMPLE, WRITE_WORD);
           end if;
         else
           if (sCountIntf.count <
-              int2slv((cADC_DATA_WIDTH-1), sCountIntf.count'length)) then
+              int2slv((cADC_DATA_WIDTH), sCountIntf.count'length)) then
             sNextAdcState <= SAMPLE;
           else
             sNextAdcState <= wait4en(sCntIn.slwEn, SAMPLE, WRITE_WORD);
