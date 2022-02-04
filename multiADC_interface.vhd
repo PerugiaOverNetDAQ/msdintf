@@ -34,12 +34,15 @@ end multiADC_interface;
 
 architecture std of multiADC_interface is
   constant cCOUNT_INTERFACE : natural := 8;
+  constant cSYNCH_LEN       : natural := 3;
 
-  signal sCntIn    : tControlIntfIn;
-  signal sCntOut   : tControlIntfOut;
-  signal sFpga2Adc : tFpga2AdcIntf;
-  signal sAdc2Fpga : tMultiAdc2FpgaIntf;
-  signal sOutWord  : tMultiAdcFifoIn;
+  signal sCntIn     : tControlIntfIn;
+  signal sCntOut    : tControlIntfOut;
+  signal sFpga2Adc  : tFpga2AdcIntf;
+  signal sAdc2Fpga  : tMultiAdc2FpgaIntf;
+  signal sOutWord   : tMultiAdcFifoIn;
+
+  signal sWriteWord : std_logic_vector(cTOTAL_ADCS-1 downto 0);
 
   type tFsmAdc is (RESET, IDLE, SAMPLE, WRITE_WORD);
   signal sAdcState, sNextAdcState : tFsmAdc;
@@ -80,9 +83,6 @@ architecture std of multiADC_interface is
     parOut : std_logic_vector(cADC_DATA_WIDTH-1 downto 0);
   end record tShiftRegInterface;
   type tMultiShiftRegIntf is array (0 to cTOTAL_ADCS-1) of tShiftRegInterface;
-  signal sSrRst : std_logic;
-  signal sSrEn  : std_logic;
-  --signal sSr    : tShiftRegInterface;
   signal sMultiSr : tMultiShiftRegIntf;
 
 begin
@@ -93,10 +93,49 @@ begin
   oADC.SClk <= sFpga2Adc.SClk;
   oADC.Cs   <= not sFpga2Adc.Cs;
 
-  sAdc2Fpga <= iMULTI_ADC;
-
   oMULTI_FIFO   <= sOutWord;
   ------------------------------------------------------------------------------
+
+  SYNCH_GEN : for gg in 0 to cTOTAL_ADCS-1 generate
+    data_synch : sync_edge
+      generic map (
+        pSTAGES => cSYNCH_LEN
+      )
+      port map (
+        iCLK    => iCLK,
+        iRST    => '0',
+        iD      => iMULTI_ADC(gg).SData,
+        oQ      => sAdc2Fpga(gg).SData,
+        oEDGE_R => open,
+        oEDGE_F => open
+      );
+
+      csRet_synch : sync_edge
+      generic map (
+        pSTAGES => cSYNCH_LEN
+      )
+      port map (
+        iCLK    => iCLK,
+        iRST    => '0',
+        iD      => iMULTI_ADC(gg).csRet,
+        oQ      => sAdc2Fpga(gg).csRet,
+        oEDGE_R => sWriteWord(gg),
+        oEDGE_F => open
+      );
+
+      ckRet_synch : sync_edge
+      generic map (
+        pSTAGES => cSYNCH_LEN
+      )
+      port map (
+        iCLK    => iCLK,
+        iRST    => '0',
+        iD      => iMULTI_ADC(gg).clkRet,
+        oQ      => open,
+        oEDGE_R => open,
+        oEDGE_F => sAdc2Fpga(gg).clkRet
+      );
+  end generate SYNCH_GEN;
 
   --! @brief Output signals in a synchronous fashion, without reset
   --! @param[in] iCLK Clock, used on rising edge
@@ -136,12 +175,6 @@ begin
         sCntOut.compl <= '0';
       end if;
 
-      if (sNextAdcState = SAMPLE) then
-        sSrEn <= sCntIn.slwEn;
-      else
-        sSrEn <= '0';
-      end if;
-
     end if;
   end process ADC_synch_signals_proc;
 
@@ -167,13 +200,11 @@ begin
       oCARRY => sCountIntf.carry
       );
 
-  sSrRst <= '1' when (sAdcState = RESET or sAdcState = IDLE) else
-            '0';
   --!@brief Generate multiple Shift-registers to sample the ADCs
   SR_GENERATE : for i in 0 to cTOTAL_ADCS-1 generate
     sMultiSr(i).load  <= '0';
     sMultiSr(i).parIn <= (others => '0');
-    sMultiSr(i).en    <= sSrEn;
+    sMultiSr(i).en    <= sAdc2Fpga(i).clkRet;
     sMultiSr(i).serIn <= sAdc2Fpga(i).SData;
 
     --!@brief Shift register to sample and deserialize the single ADC output
@@ -184,7 +215,7 @@ begin
         )
       port map(
         iCLK      => iCLK,
-        iRST      => sSrRst,
+        iRST      => sAdc2Fpga(i).csRet,
         iEN       => sMultiSr(i).en,
         iLOAD     => sMultiSr(i).load,
         iSHIFT    => sMultiSr(i).serIn,
@@ -196,8 +227,7 @@ begin
     sOutWord(i).data <= sMultiSr(i).parOut(cADC_DATA_WIDTH-3 downto 0) & "00"
                           when (iFAST = '1') else
                         sMultiSr(i).parOut;
-    sOutWord(i).wr   <= '1' when (sAdcState = WRITE_WORD) else
-                        '0';
+    sOutWord(i).wr   <= sWriteWord(i);
     sOutWord(i).rd   <= '0';
   end generate SR_GENERATE;
 
