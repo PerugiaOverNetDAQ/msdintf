@@ -26,11 +26,11 @@ package FOOTpackage is
   constant cCLK_FREQ             : natural := 20; --!Clock frequency in ns (used only to compute delay)
   constant cMULT                  : natural := 320; --!Multiplier of the BUSY stretch in ns
 
-  constant cFE_CLK_DIV   : std_logic_vector(15 downto 0) := int2slv(40, 16); --!FE SlowClock divider: was 160 at the GSI test beam
+  constant cFE_CLK_DIV   : std_logic_vector(15 downto 0) := int2slv(34, 16); --!FE SlowClock divider: was 160 at the GSI test beam
   constant cADC_CLK_DIV  : std_logic_vector(15 downto 0) := int2slv(2, 16);  --!ADC SlowClock divider
-  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(20, 16);  --!FE SlowClock duty cycle
+  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(17, 16);  --!FE SlowClock duty cycle
   constant cADC_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(1, 16);  --!ADC SlowClock duty cycle
-  constant cADC_DELAY    : std_logic_vector(15 downto 0) := int2slv(1, 16);  --!Delay from the FE falling edge and the start of the AD conversion
+  constant cADC_DELAY    : std_logic_vector(15 downto 0) := int2slv(29, 16);  --!Delay from the FE falling edge and the start of the AD conversion
   constant cBUSY_LEN     : std_logic_vector(15 downto 0) := int2slv((cFE_CLOCK_CYCLES*cTOTAL_ADCS*cCLK_FREQ)/(2*cMULT), 16);  --!320-ns duration of busy extension time
   --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
   constant cCFG_PLANE    : std_logic_vector(15 downto 0) := x"0107";  --!uStrip configurations
