@@ -1,0 +1,27 @@
+{head:{
+  text:'Readout Operations for a IDE1140',
+  //tick:0,
+  //every:1
+ },
+ signal: [
+   {                    node:'J................', phase:-0.},
+   {name:'hold_b',      wave:'1.0........|....1', phase:-0.,
+                        node:'P.Q..............'},
+   {name:'shift_in_b',  wave:'1..0.1.....|.....', phase:-0.,
+                        node:'.................'},
+   {name:'clk_b',       wave:'1.N.....1', phase: 0.2, period: 2,
+                        node:'..ABCDZX.........'},
+   {name:'shift_out_b', wave:'1..........|..0.1', phase:-0.,
+                        node:'..............M..'},
+   {name:'diff_out',    wave:'z...2.2.2.2|2.z..', data:'0 1 2 ... 63',
+    					node:'....E.F.G.H.I.L..', phase:-0.},
+   {                    node:'K...W.........Y..', phase:0.}
+ ],
+ edge: [
+   'A-~E', 'B-~F', 'C-~G', 'D-~H', 'Z-~I', 'X-~M', 'W+Y 64 x clk_b', 'J-K', 'K Trigger', 'P+Q Peaking time'
+  ],
+ foot:{
+  //text:'',
+  tock:0
+ }
+}

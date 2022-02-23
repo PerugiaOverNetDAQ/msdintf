@@ -16,20 +16,24 @@ use work.basic_package.all;
 package FOOTpackage is
   constant cADC_DATA_WIDTH       : natural := 16;  --!ADC data-width
   constant cADC_FIFO_DEPTH       : natural := 256;  --!ADC FIFO number of words
-  constant cTOTAL_ADC_WORDS_NUM  : natural := 2048;  --! numero totale massimo di parole da 16 bit nella fifo finale 1280??
+  constant cCOLL_FIFO_DEPTH      : natural := 2048;  --! numero totale massimo di parole da 16 bit nella fifo finale 1280??
   constant cFE_DAISY_CHAIN_DEPTH : natural := 2;   --!FEs in a daisy chain
   constant cFE_CHANNELS          : natural := 64;  --!Channels per FE
   constant cFE_CLOCK_CYCLES      : natural := cFE_DAISY_CHAIN_DEPTH*cFE_CHANNELS;  --!Number of clock cycles to feed a chain
   constant cFE_SHIFT_2_CLK       : natural := 2; --!Wait between FE shift and clock assertion
   constant cTOTAL_ADCS           : natural := 10; --!Total ADCs
 
+  constant cCLK_FREQ             : natural := 20; --!Clock frequency in ns (used only to compute delay)
+  constant cMULT                  : natural := 320; --!Multiplier of the BUSY stretch in ns
 
-  constant cFE_CLK_DIV   : std_logic_vector(15 downto 0) := int2slv(40, 16); --!FE SlowClock divider: was 160 at the GSI test beam
+  constant cFE_CLK_DIV   : std_logic_vector(15 downto 0) := int2slv(34, 16); --!FE SlowClock divider: was 160 at the GSI test beam
   constant cADC_CLK_DIV  : std_logic_vector(15 downto 0) := int2slv(2, 16);  --!ADC SlowClock divider
-  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(4, 16);  --!FE SlowClock duty cycle
-  constant cADC_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(4, 16);  --!ADC SlowClock duty cycle
+  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(17, 16);  --!FE SlowClock duty cycle
+  constant cADC_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(1, 16);  --!ADC SlowClock duty cycle
+  constant cADC_DELAY    : std_logic_vector(15 downto 0) := int2slv(29, 16);  --!Delay from the FE falling edge and the start of the AD conversion
+  constant cBUSY_LEN     : std_logic_vector(15 downto 0) := int2slv((cFE_CLOCK_CYCLES*cTOTAL_ADCS*cCLK_FREQ)/(2*cMULT), 16);  --!320-ns duration of busy extension time
   --!iCFG_PLANE bits: 2:0: FE-Gs;  3: FE-test; 4: Ext-TRG; 15:5: x
-  constant cCFG_PLANE    : std_logic_vector(15 downto 0) := x"0007";  --!uStrip configurations
+  constant cCFG_PLANE    : std_logic_vector(15 downto 0) := x"0107";  --!uStrip configurations
   constant cTRG_PERIOD   : std_logic_vector(31 downto 0) := x"0000FFFF";  --!Clock cycles between two internal triggers
   constant cTRG2HOLD     : std_logic_vector(15 downto 0) := int2slv(325, 16);  --!Clock-cycles between an external trigger and the FE-HOLD signal
 
@@ -96,13 +100,13 @@ package FOOTpackage is
   end record tFifoOut_ADC;
 
   --!Output signals of the collector FIFOs
-  type tAllFifoOut_ADC is record
+  type tCollFifoOut is record
     q      : std_logic_vector((2*cADC_DATA_WIDTH)-1 downto 0);  --!Output data port
     aEmpty : std_logic;                 --!Almost empty
     empty  : std_logic;                 --!Empty
     aFull  : std_logic;                 --!Almost full
     full   : std_logic;                 --!Full
-  end record tAllFifoOut_ADC;
+  end record tCollFifoOut;
 
   --!Configuration ports to the MSD subpart
   type msd_config is record
@@ -114,16 +118,14 @@ package FOOTpackage is
     cfgPlane     : std_logic_vector(15 downto 0);  --!uStrip configuration
     intTrgPeriod : std_logic_vector(31 downto 0);  --!Clock-cycles between two internal triggers
     trg2Hold     : std_logic_vector(15 downto 0);  --!Clock-cycles between an external trigger and the FE-HOLD signal
+    adcDelay     : std_logic_vector(15 downto 0);  --!Delay from the FE falling edge and the start of the AD conversion
+    extendBusy   : std_logic_vector(15 downto 0);  --!320-ns duration of busy extension time
   end record msd_config;
 
   --!Multiple AD7276A ADCs output signals and FIFOs
   type tMultiAdc2FpgaIntf is array (0 to cTOTAL_ADCS-1) of tAdc2FpgaIntf;
   type tMultiAdcFifoIn is array (0 to cTOTAL_ADCS-1) of tFifoIn_ADC;
   type tMultiAdcFifoOut is array (0 to cTOTAL_ADCS-1) of tFifoOut_ADC;
-
-  --!
-  type fifo_type is array (0 to cTOTAL_ADC_WORDS_NUM - 1)of std_logic_vector((2* cTOTAL_ADCs * cADC_DATA_WIDTH) - 1 downto 0);
-  subtype index_type is natural range fifo_type'range;
 
   --!Initialization constants for the upper types
   constant c_FROM_FIFO_INIT : tFifoOut_ADC := (full   => '0',
@@ -166,6 +168,7 @@ package FOOTpackage is
       iRST        : in  std_logic;
       oCNT        : out tControlIntfOut;
       iCNT        : in  tControlIntfIn;
+      iFAST       : in  std_logic;
       --# {{ADC Interface}}
       oADC        : out tFpga2AdcIntf;
       iMULTI_ADC  : in  tMultiAdc2FpgaIntf;
@@ -181,27 +184,29 @@ package FOOTpackage is
       );
     port (
       --# {{clocks|Clock}}
-      iCLK          : in  std_logic;    --!Main clock
+      iCLK          : in  std_logic;
       --# {{control|Control}}
-      iRST          : in  std_logic;    --!Main reset
-      oCNT          : out tControlIntfOut;     --!Control signals in output
-      iCNT          : in  tControlIntfIn;      --!Control signals in input
-      iFE_CLK_DIV   : in  std_logic_vector(15 downto 0);  --!FE SlowClock divider
-      iFE_CLK_DUTY  : in  std_logic_vector(15 downto 0);  --!FE SlowClock duty cycle
-      iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
-      iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
-      iCFG_FE       : in  std_logic_vector(3 downto 0);   --!FE configurations
+      iRST          : in  std_logic;
+      oCNT          : out tControlIntfOut;
+      iCNT          : in  tControlIntfIn;
+      iFE_CLK_DIV   : in  std_logic_vector(15 downto 0);
+      iFE_CLK_DUTY  : in  std_logic_vector(15 downto 0);
+      iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);
+      iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);
+      iADC_DELAY    : in  std_logic_vector(15 downto 0);
+      iCFG_FE       : in  std_logic_vector(3 downto 0);
+      iADC_FAST     : in  std_logic;
       --# {{FE Interface}}
-      oFE0          : out tFpga2FeIntf;   --!Output signals to the FE0
-      oFE1          : out tFpga2FeIntf;   --!Output signals to the FE1
-      iFE           : in  tFe2FpgaIntf;   --!Input signals from the FE
+      oFE0          : out tFpga2FeIntf;
+      oFE1          : out tFpga2FeIntf;
+      iFE           : in  tFe2FpgaIntf;
       --# {{ADC Interface}}
-      oADC0         : out tFpga2AdcIntf;  --!Signals from the FPGA to the 0-4 ADCs
-      oADC1         : out tFpga2AdcIntf;  --!Signals from the FPGA to the 5-9 ADCs
-      iMULTI_ADC    : in  tMultiAdc2FpgaIntf;  --!Signals from the ADCs to the FPGA
+      oADC0         : out tFpga2AdcIntf;
+      oADC1         : out tFpga2AdcIntf;
+      iMULTI_ADC    : in  tMultiAdc2FpgaIntf;
       --# {{Output FIFO Interface}}
-      oMULTI_FIFO   : out tMultiAdcFifoOut;    --!Output interface of a FIFO
-      iMULTI_FIFO   : in  tMultiAdcFifoIn      --!Input interface of a FIFO
+      oMULTI_FIFO   : out tMultiAdcFifoOut;
+      iMULTI_FIFO   : in  tMultiAdcFifoIn
       );
   end component multiAdcPlaneInterface;
 
@@ -225,9 +230,9 @@ package FOOTpackage is
       oFE1         : out tFpga2FeIntf;  --!Output signals to the FE2
       oADC1        : out tFpga2AdcIntf;    --!Output signals to the ADC2
       --# {{Event Builder Interface}}
-      oDATA        : out tAllFifoOut_ADC;
-      DATA_VALID   : out std_logic;
-      END_OF_EVENT : out std_logic
+      oCOLL_FIFO    : out tCollFifoOut;
+      oDATA_VALID   : out std_logic;
+      oEND_OF_EVENT : out std_logic
       );
   end component Data_Builder_Top;
 
@@ -235,16 +240,16 @@ package FOOTpackage is
   component Data_Builder is
     port (
       --# {{clocks|Clock}}
-      iCLK         : in  std_logic;
+      iCLK          : in  std_logic;
       --# {{control|Control}}
-      iRST         : in  std_logic;
+      iRST          : in  std_logic;
       --#{{MSD Interface}}
-      iMULTI_FIFO  : in  tMultiAdcFifoOut;
-      oMULTI_FIFO  : out tMultiAdcFifoIn;
+      iMULTI_FIFO   : in  tMultiAdcFifoOut;
+      oMULTI_FIFO   : out tMultiAdcFifoIn;
       --#{{HPS Interface}}
-      oDATA        : out tAllFifoOut_ADC;
-      DATA_VALID   : out std_logic;
-      END_OF_EVENT : out std_logic
+      oCOLL_FIFO    : out tCollFifoOut;
+      oDATA_VALID   : out std_logic;
+      oEND_OF_EVENT : out std_logic
       );
   end component Data_Builder;
 

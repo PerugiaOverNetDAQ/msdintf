@@ -78,7 +78,16 @@ package basic_package is
     port(iCLK, iRST, iEN : in  std_logic;
        oCLK_OUT, oCLK_OUT_RISING, oCLK_OUT_FALLING : out std_logic;
        iFREQ_DIV   : in  std_logic_vector(15 downto 0);
-	   iDUTY_CYCLE : in  std_logic_vector(15 downto 0));
+	     iDUTY_CYCLE : in  std_logic_vector(15 downto 0));
+  end component;
+  -- clock_divider_2 -------------------------------------------------------------
+  component clock_divider_2 is
+    generic(pPOLARITY : std_logic;
+      pWIDTH    : natural);
+    port(iCLK, iRST, iEN : in  std_logic;
+       oCLK_OUT, oCLK_OUT_RISING, oCLK_OUT_FALLING : out std_logic;
+       iFREQ_DIV   : in  std_logic_vector(pWIDTH-1 downto 0);
+	     iDUTY_CYCLE : in  std_logic_vector(pWIDTH-1 downto 0));
   end component;
   -- parametric_fifo_synch -----------------------------------------------------
   component parametric_fifo_synch is
@@ -142,9 +151,10 @@ end component;
   end component;
   -- delay_timer ---------------------------------------------------------------
   component delay_timer is
+    generic(pWIDTH : natural);
     port(iCLK, iRST, iSTART  : in  std_logic;
       oBUSY, oOUT : out std_logic;
-      iDELAY : in  std_logic_vector(15 downto 0));
+      iDELAY : in  std_logic_vector(pWIDTH-1 downto 0));
   end component;
 
   -- Types ---------------------------------------------------------------------

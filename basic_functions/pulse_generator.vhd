@@ -1,16 +1,16 @@
 --!@file pulse_generator.vhd
 --!@brief Generate a periodic pulse
+--!
+--!@details Generate a pulse with a period of iPERIOD and pLENGTH long;
+--!generate also the RISING and FALLING edges
+--!
 --!@author Mattia Barbanera, mattia.barbanera@infn.it
---!@date 10/06/2020
---!@version 0.2 - 10/06/2020 - Simulated; Optimized for logic occupation
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
---!@brief Generate a periodic pulse
---!@details Generate a pulse with a period of iPERIOD and pLENGTH long;
---!generate also the RISING and FALLING edges
+--!@copydoc pulse_generator.vhd
 entity pulse_generator is
   generic(
     --!Counter width
@@ -38,6 +38,7 @@ entity pulse_generator is
   );
 end pulse_generator;
 
+--!@copydoc pulse_generator.vhd
 architecture Behavioral of pulse_generator is
   signal sSlvEnable   : std_logic_vector(pWIDTH-1 downto 0):= (others=>'0');
   signal sCounter     : std_logic_vector(pWIDTH-1 downto 0):= (others=>'0');
