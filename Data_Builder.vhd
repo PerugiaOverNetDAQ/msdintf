@@ -38,10 +38,10 @@ architecture std of Data_Builder is
   signal sEndOfEvent : std_logic;
 
   --
-  type tFsmDB is (IDLE, PKT_LENGTH, HEADER_1, HEADER_2, HEADER_3, HEADER_4,
+  type tFsmDB is (RESET, IDLE, PKT_LENGTH, HEADER_1, HEADER_2, HEADER_3, HEADER_4,
                   WRITE_WORD, OUT_VALID, FOOTER_1, FOOTER_2, FOOTER_3, EVENT_END
                   );
-  signal state : tFsmDB;
+  signal state, nextstate : tFsmDB;
 
   signal sDataDetected : std_logic;
   signal sWordCount    : natural range 0 to (cTOTAL_ADCs*2) := 0;
@@ -103,112 +103,157 @@ begin
       );
 
 
-  FSM_FIFO_proc : process (iCLK)
+  -- Handles writes to the FIFO
+  fsm : process (iCLK)
   begin
     if (rising_edge(iCLK)) then
       if (iRST = '1') then
+        state <= RESET;
+      else
+        state <= nextstate;
+      end if;  --iRST
+    end if;  --rising_edge
+  end process fsm;
+
+  FSM_FIFO_proc : process (state, sUsedW, sUsedR, sDataDetected, sWordCount)
+  begin
+    case (state) is
+      --Reset the FSM
+      when RESET =>
+        nextstate <= IDLE;
+
+      when IDLE =>
+        if (to_integer(unsigned(sUsedW)) > (cTOTAL_ADCs*cFE_CLOCK_CYCLES)-1)then
+          nextstate <= PKT_LENGTH;
+        else
+          if (sDataDetected = '1')then
+            nextstate <= WRITE_WORD;
+          else
+            nextstate <= IDLE;
+          end if;
+        end if;
+
+      when WRITE_WORD =>
+        if (sWordCount < cTOTAL_ADCs-1) then
+          nextstate <= WRITE_WORD;
+        else
+          nextstate <= IDLE;
+        end if;
+
+      when PKT_LENGTH =>
+        nextstate <= HEADER_1;
+
+      when HEADER_1 =>
+        nextstate <= HEADER_2;
+
+      when HEADER_2 =>
+        nextstate <= HEADER_3;
+
+      when HEADER_3 =>
+        nextstate <= HEADER_4;
+
+      when HEADER_4 =>
+        nextstate <= OUT_VALID;
+
+      when OUT_VALID =>
+        if(to_integer(unsigned(sUsedR)) > 1)then
+          nextstate <= OUT_VALID;
+        else
+          nextstate <= FOOTER_1;
+        end if;
+
+      when FOOTER_1 =>
+        nextstate <= FOOTER_2;
+
+      when FOOTER_2 =>
+        nextstate <= FOOTER_3;
+
+      when FOOTER_3 =>
+        nextstate <= EVENT_END;
+
+      when EVENT_END =>
+        nextstate <= IDLE;
+
+      when others =>
+        nextstate <= RESET;
+
+    end case;
+  end process FSM_FIFO_proc;
+
+  FIFOs_signal_process : process (iCLK)
+  begin
+    if (rising_edge(iCLK)) then
+      if (state = WRITE_WORD) then
+        sCollFifoIn.wr <= '1';
+        sWordCount     <= sWordCount +1;
+      else
         sCollFifoIn.wr <= '0';
         sWordCount     <= 0;
+      end if;
+      sCollFifoIn.data <= iMULTI_FIFO(sWordCount).q;
+    end if;
+  end process;
+
+  footer_header : process (state, sCollFifoOut) is
+  begin
+    case state is
+      when PKT_LENGTH =>
+        oCOLL_FIFO.q <= int2slv((cTOTAL_ADCs*cFE_CLOCK_CYCLES)/2 +8, oCOLL_FIFO.q'length);
+        sDataValid     <= '1';
+        sCollFifoIn.rd <= '0';
+
+      when header_1 =>
+        oCOLL_FIFO.q <= std_logic_vector(Header1_ES);
+        sDataValid     <= '1';
+        sCollFifoIn.rd <= '0';
+
+      when header_2 =>
+        oCOLL_FIFO.q <= std_logic_vector(Header2_ES);
+        sDataValid     <= '1';
+        sCollFifoIn.rd <= '0';
+
+      when header_3 =>
+        oCOLL_FIFO.q <= std_logic_vector(Header3_ES);
+        sDataValid     <= '1';
+        sCollFifoIn.rd <= '0';
+
+      when header_4 =>
+        oCOLL_FIFO.q <= std_logic_vector(Header4_ES);
+        sDataValid     <= '1';
+        sCollFifoIn.rd <= '1';
+
+      when OUT_VALID =>
+        oCOLL_FIFO.q <= sCollFifoOut.q(15 downto 0) & sCollFifoOut.q(31 downto 16);
+        sDataValid     <= '1';
+        sCollFifoIn.rd <= '1';
+
+      when footer_1 =>
+        oCOLL_FIFO.q <= std_logic_vector(Footer1_ES);
+        sDataValid     <= '1';
+        sCollFifoIn.rd <= '0';
+
+      when footer_2 =>
+        oCOLL_FIFO.q <= std_logic_vector(Footer2_ES);
+        sDataValid     <= '1';
+        sCollFifoIn.rd <= '0';
+
+      when footer_3 =>
+        oCOLL_FIFO.q <= std_logic_vector(Footer3_ES);
+        sDataValid     <= '1';
+        sCollFifoIn.rd <= '0';
+
+      when others =>
         oCOLL_FIFO.q <= int2slv(0, oCOLL_FIFO.q'length);
         sDataValid     <= '0';
         sCollFifoIn.rd <= '0';
-        sEndOfEvent    <= '0';
-        state          <= IDLE;
-      else
-        sDataValid       <= '0';
-        sEndOfEvent      <= '0';
-        sCollFifoIn.wr   <= '0';
-        sCollFifoIn.rd   <= '0';
-        oCOLL_FIFO.q   <= int2slv(0, oCOLL_FIFO.q'length);
-        case (state) is
-          when IDLE =>
-            sCollFifoIn.data <= iMULTI_FIFO(0).q;
-            sWordCount <= 0;
-            if (to_integer(unsigned(sUsedW)) > (cTOTAL_ADCs*cFE_CLOCK_CYCLES)-1)then
-              state <= PKT_LENGTH;
-            else
-              if (sDataDetected = '1')then
-                state <= WRITE_WORD;
-              else
-                state <= IDLE;
-              end if;
-            end if;
 
-          when WRITE_WORD =>
-            if (sWordCount < cTOTAL_ADCs) then
-              sCollFifoIn.data <= iMULTI_FIFO(sWordCount).q;
-              sWordCount     <= sWordCount +1;
-              sCollFifoIn.wr <= '1';
-              state          <= WRITE_WORD;
-            else
-              sCollFifoIn.data <= iMULTI_FIFO(0).q;
-              sWordCount     <= 0;
-              sCollFifoIn.wr <= '0';
-              state          <= IDLE;
-            end if;
+    end case;
 
-          when PKT_LENGTH =>
-            oCOLL_FIFO.q <= int2slv((cTOTAL_ADCs*cFE_CLOCK_CYCLES)/2 +8, oCOLL_FIFO.q'length);
-            sDataValid     <= '1';
-            state          <= HEADER_1;
-
-          when HEADER_1 =>
-            oCOLL_FIFO.q <= std_logic_vector(Header1_ES);
-            sDataValid     <= '1';
-            state          <= HEADER_2;
-
-          when HEADER_2 =>
-            oCOLL_FIFO.q <= std_logic_vector(Header2_ES);
-            sDataValid     <= '1';
-            state          <= HEADER_3;
-
-          when HEADER_3 =>
-            oCOLL_FIFO.q <= std_logic_vector(Header3_ES);
-            sDataValid     <= '1';
-            state          <= HEADER_4;
-
-          when HEADER_4 =>
-            oCOLL_FIFO.q <= std_logic_vector(Header4_ES);
-            sDataValid     <= '1';
-            sCollFifoIn.rd <= '1';
-            state          <= OUT_VALID;
-
-          when OUT_VALID =>
-            oCOLL_FIFO.q <= sCollFifoOut.q(15 downto 0) & sCollFifoOut.q(31 downto 16);
-            sDataValid     <= '1';
-            sCollFifoIn.rd <= '1';
-            if(to_integer(unsigned(sUsedR)) > 1)then
-              state <= OUT_VALID;
-            else
-              state <= FOOTER_1;
-            end if;
-
-          when FOOTER_1 =>
-            oCOLL_FIFO.q <= std_logic_vector(Footer1_ES);
-            sDataValid     <= '1';
-            state          <= FOOTER_2;
-
-          when FOOTER_2 =>
-            oCOLL_FIFO.q <= std_logic_vector(Footer2_ES);
-            sDataValid     <= '1';
-            state          <= FOOTER_3;
-
-          when FOOTER_3 =>
-            oCOLL_FIFO.q <= std_logic_vector(Footer3_ES);
-            sDataValid     <= '1';
-            state          <= EVENT_END;
-
-          when EVENT_END =>
-            oCOLL_FIFO.q <= int2slv(0, oCOLL_FIFO.q'length);
-            sEndOfEvent    <= '1';
-            state          <= IDLE;
-
-          when others =>
-            state <= IDLE;
-
-        end case;
-      end if;  --rst
-    end if;  --clk
-  end process FSM_FIFO_proc;
+    if (state = EVENT_END) then
+      sEndOfEvent <= '1';
+    else
+      sEndOfEvent <= '0';
+    end if;
+  end process;
 
 end std;
