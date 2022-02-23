@@ -32,6 +32,7 @@ entity multiAdcPlaneInterface is
     iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
     iADC_DELAY    : in  std_logic_vector(15 downto 0);  --!Delay from the FE falling edge and the start of the AD conversion
     iCFG_FE       : in  std_logic_vector(3 downto 0);   --!FE configurations
+    iADC_FAST     : in  std_logic;                      --!Switch to the ADC fast-data mode
     -- FE interface
     oFE0          : out tFpga2FeIntf;   --!Output signals to the FE0
     oFE1          : out tFpga2FeIntf;   --!Output signals to the FE1
@@ -52,7 +53,6 @@ architecture std of multiAdcPlaneInterface is
   signal sCntIn       : tControlIntfIn;
   signal sFifoOut     : tMultiAdcFifoOut;
   signal sFifoIn      : tMultiAdcFifoIn;
-  signal sStickyCompl : std_logic_vector(1 downto 0);
 
   signal sFe          : tFpga2FeIntf;
   signal sFeRst       : std_logic;
@@ -124,7 +124,7 @@ begin
   --!@brief Generate the SlowClock and SlowEnable for the ADC interface
   ADC_div : clock_divider_2
     generic map(
-      pPOLARITY => '0',
+      pPOLARITY => '1',
       pWIDTH    => 16
       )
     port map (
@@ -183,6 +183,7 @@ begin
       iRST        => sAdcRst,
       oCNT        => sAdcOCnt,
       iCNT        => sAdcICnt,
+      iFAST       => iADC_FAST,
       oADC        => sAdc,
       iMULTI_ADC  => iMULTI_ADC,
       oMULTI_FIFO => sAdcOFifo
@@ -220,7 +221,8 @@ begin
         );
   end generate FIFO_GENERATE;
 
-
+  sAdcIntStart <= '1' when sFsmSynchEn = '1' and sFeDataVld = '1' else
+                  '0';
   --!@brief Output signals in a synchronous fashion, without reset
   --!@param[in] iCLK Clock, used on rising edge
   HP_synch_signals_proc : process (iCLK)
@@ -252,11 +254,11 @@ begin
         sFeSlwEn <= '0';
       end if;
 
-      if (sHpState = START_EXTADC_RO) then
-        sAdcIntStart <= '1';
-      else
-        sAdcIntStart <= '0';
-      end if;
+      --if (sNextHpState = START_EXTADC_RO) then
+      --  sAdcIntStart <= '1';
+      --else
+      --  sAdcIntStart <= '0';
+      --end if;
 
       if (sHpState = RESET or sAdcOCnt.compl = '1') then
         sAdcSlwRst <= '1';
@@ -268,17 +270,6 @@ begin
         sAdcSlwEn <= '1';
       else
         sAdcSlwEn <= '0';
-      end if;
-
-      if (sHpState = IDLE) then
-        sStickyCompl <= (others => '0');
-      else
-        if (sFeOCnt.compl = '1') then
-          sStickyCompl(0) <= '1';
-        end if;
-        if (sStickyCompl(0) = '1' and sAdcOCnt.compl = '1') then
-          sStickyCompl(1) <= '1';
-        end if;
       end if;
 
       if (sHpState /= IDLE) then
@@ -330,7 +321,7 @@ begin
   --!@param[in] sFsmSynchEn Synch this FSM to the FSM of the FSM
   --!@return sNextHpState  Next state of the FSM
   FSM_HP_proc : process(sHpState, sCntIn, sFeOCnt, sAdcOCnt, sFsmSynchEn,
-                        sFeDataVld, sStickyCompl)
+                        sFeDataVld, sFeOCnt.compl)
   begin
     case (sHpState) is
       --Reset the FSM
@@ -363,7 +354,7 @@ begin
 
       --Go to the last state or continue reading synchronized to the FE clock
       when FE_EDGE =>
-        if (sStickyCompl = "11") then
+        if (sFeOCnt.compl = '1') then
           sNextHpState <= END_READOUT;
         else
           if (sFsmSynchEn = '1' and sFeDataVld = '1') then

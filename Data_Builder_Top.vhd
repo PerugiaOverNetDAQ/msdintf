@@ -44,18 +44,19 @@ architecture std of Data_Builder_Top is
   signal sFeIn         : tFe2FpgaIntf;
   signal sMultiFifoOut : tMultiAdcFifoOut;    --!Output interface of a FIFO1
   signal sMultiFifoIn  : tMultiAdcFifoIn;     --!Input interface of a FIFO1
-  
+
   --Configuration
   signal sCntOut  : tControlIntfOut;
   signal sCntIn   : tControlIntfIn;
   signal sHpCfg   : std_logic_vector (3 downto 0);
-  
+  signal sAdcFast : std_logic;
+
   --Trigger
   signal sCalTrigEn : std_logic;
   signal sCalTrig   : std_logic;
   signal sTrigMux   : std_logic;
   signal sTrig      : std_logic;
-  
+
 
   --Busy
   signal sTrigDelBusy : std_logic;
@@ -64,15 +65,16 @@ architecture std of Data_Builder_Top is
 
 begin
 
-  --- Combinatorial assignments ------------------------------------------------  
+  --- Combinatorial assignments ------------------------------------------------
   oCNT.busy    <= sCntOut.busy or sTrigBusy or sExtendBusy;
   oCNT.error   <= sCntOut.error;
   oCNT.reset   <= sCntOut.reset;
   oCNT.compl   <= sCntOut.compl;
   oCAL_TRIG    <= sCalTrig;
 
-  sHpCfg       <= iMSD_CONFIG.cfgPlane(3 downto 0);
-  sCalTrigEn   <= iMSD_CONFIG.cfgPlane(4);
+  sHpCfg     <= iMSD_CONFIG.cfgPlane(3 downto 0);
+  sCalTrigEn <= iMSD_CONFIG.cfgPlane(4);
+  sAdcFast   <= iMSD_CONFIG.cfgPlane(8);
 
   sCntIn.en     <= iEN;
   sCntIn.start  <= sTrig;
@@ -155,6 +157,7 @@ begin
       iADC_CLK_DUTY => iMSD_CONFIG.adcClkDuty,
       iADC_DELAY    => iMSD_CONFIG.adcDelay,
       iCFG_FE       => sHpCfg,
+      iADC_FAST     => sAdcFast,
       -- FE interface
       oFE0          => oFE0,
       oFE1          => oFE1,
