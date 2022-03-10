@@ -42,7 +42,6 @@ architecture std of FE_interface is
   signal sCntIn   : tControlIntfIn;
   signal sCntOut  : tControlIntfOut;
   signal sFpga2Fe : tFpga2FeIntf;
-  --signal sFe2Fpga : tFe2FpgaIntf;
 
   type tFsmFe is (RESET, IDLE, SYNCH_START, HOLD, SHIFT,
                   FIRST_CLOCK, CLOCK_FORWARD, SYNCH_END, COMPLETE);
@@ -104,12 +103,10 @@ begin
   oFE.G1      <= sFpga2Fe.G1;
   oFE.G2      <= sFpga2Fe.G2;
   oFE.Hold    <= not sFpga2Fe.Hold;
-  oFE.DRst    <= sFpga2Fe.DRst;
+  oFE.DRst    <= sFpga2Fe.DRst or iFE.initRst;
   oFE.ShiftIn <= not sFpga2Fe.ShiftIn;
   oFE.Clk     <= sFpga2Fe.Clk;
   oFE.TestOn  <= sFpga2Fe.TestOn;
-
-  --sFe2Fpga <= iFE;
 
   sFpga2Fe.G0 <= iCNT_G(0);
   sFpga2Fe.G1 <= iCNT_G(1);
@@ -130,7 +127,7 @@ begin
         sFpga2Fe.Hold <= '0';
       end if;
 
-      if (sFeState = RESET) then
+      if (sFeState = RESET or sFeState = COMPLETE) then
         sFpga2Fe.DRst <= '1';
       else
         sFpga2Fe.DRst <= '0';

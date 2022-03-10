@@ -28,7 +28,7 @@ package FOOTpackage is
 
   constant cFE_CLK_DIV   : std_logic_vector(15 downto 0) := int2slv(34, 16); --!FE SlowClock divider: was 160 at the GSI test beam
   constant cADC_CLK_DIV  : std_logic_vector(15 downto 0) := int2slv(2, 16);  --!ADC SlowClock divider
-  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(17, 16);  --!FE SlowClock duty cycle
+  constant cFE_CLK_DUTY  : std_logic_vector(15 downto 0) := int2slv(8, 16);  --!FE SlowClock duty cycle
   constant cADC_CLK_DUTY : std_logic_vector(15 downto 0) := int2slv(1, 16);  --!ADC SlowClock duty cycle
   constant cADC_DELAY    : std_logic_vector(15 downto 0) := int2slv(29, 16);  --!Delay from the FE falling edge and the start of the AD conversion
   constant cBUSY_LEN     : std_logic_vector(15 downto 0) := int2slv((cFE_CLOCK_CYCLES*cTOTAL_ADCS*cCLK_FREQ)/(2*cMULT), 16);  --!320-ns duration of busy extension time
@@ -53,6 +53,7 @@ package FOOTpackage is
 
   --!IDE1140_DS front-End output signals (to the FPGA)
   type tFe2FpgaIntf is record
+    initRst  : std_logic;
     ShiftOut : std_logic;               -- Active Low
   end record tFe2FpgaIntf;
 
