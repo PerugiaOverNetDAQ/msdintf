@@ -24,6 +24,7 @@ entity FE_interface is
     iCNT      : in  tControlIntfIn;     --!Control signals in input
     iCNT_G    : in  std_logic_vector(2 downto 0);  --!Values for FE G* parameters
     iCNT_Test : in  std_logic;          --!Flag to activate the FE test-mode
+    iCNT_TEST_CH    : in std_logic_vector(7 downto 0); --!Channel where to inject calibration in test mode
     iCNT_OTHER_EDGE : in std_logic;     --!Opposite edge when compared to the slwEn
     oDATA_VLD : out std_logic;          --!Flags data available at ADC input
     -- FE interface
@@ -34,8 +35,8 @@ end FE_interface;
 
 --!@copydoc FE_interface.vhd
 architecture std of FE_interface is
-  constant cCH_COUNT_WIDTH  : natural
-                                := ceil_log2(cFE_CHANNELS+cFE_SHIFT_2_CLK+1)+1;
+  constant cCH_COUNT_WIDTH  : natural := ceil_log2(cFE_CHANNELS);
+  --cDC_COUNT_WIDTH has 1 extra bit to handle the case of only 1 VA
   constant cDC_COUNT_WIDTH  : natural := ceil_log2(cFE_DAISY_CHAIN_DEPTH)+1;
   constant cS2C_COUNT_WIDTH : natural := 4;
 
@@ -94,6 +95,11 @@ architecture std of FE_interface is
   signal sS2cCount    : tS2cCountInterface;
 
   signal sAtLeastOneFe : std_logic;
+
+  --Count channels for test mode
+  --sTestCh has 1 extra bit to handle the case of only 1 VA
+  signal sTestCh    : std_logic_vector(ceil_log2(cFE_CLOCK_CYCLES) downto 0);
+  signal sTestSend  : std_logic;
 begin
   -- Combinatorial assignments -------------------------------------------------
   oCNT   <= sCntOut;
@@ -111,6 +117,8 @@ begin
   sFpga2Fe.G0 <= iCNT_G(0);
   sFpga2Fe.G1 <= iCNT_G(1);
   sFpga2Fe.G2 <= iCNT_G(2);
+
+  sTestCh <= sDcCount.count & sChCount.count;
   ------------------------------------------------------------------------------
 
   --! @brief Output signals in a synchronous fashion, without reset
@@ -122,12 +130,12 @@ begin
 
       if (sFeState = HOLD or sFeState = SHIFT or sFeState = FIRST_CLOCK
           or sFeState = CLOCK_FORWARD or sFeState = SYNCH_END) then
-        sFpga2Fe.Hold <= '1';
+        sFpga2Fe.Hold <= not iCNT_Test; --Disable HOLD when test mode is enabled
       else
         sFpga2Fe.Hold <= '0';
       end if;
 
-      if (sFeState = RESET or sFeState = COMPLETE) then
+      if (sFeState = RESET or (iCNT_Test = '0' and sFeState = COMPLETE)) then
         sFpga2Fe.DRst <= '1';
       else
         sFpga2Fe.DRst <= '0';
@@ -176,9 +184,15 @@ begin
 
       if (sNextFeState = FIRST_CLOCK or sNextFeState = CLOCK_FORWARD
           or sNextFeState = SYNCH_END) then
-        oDATA_VLD <= '1';
+        oDATA_VLD <= not iCNT_Test;
       else
         oDATA_VLD <= '0';
+      end if;
+
+      if (sTestCh < iCNT_TEST_CH) then
+        sTestSend <= '1';
+      else
+        sTestSend <= not iCNT_Test;
       end if;
 
     end if;
@@ -309,13 +323,22 @@ begin
 
       --First clock forwarded to the FE
       when FIRST_CLOCK =>
-        sNextFeState <= wait4en(sCntIn.slwEn, FIRST_CLOCK, CLOCK_FORWARD);
+        if (sTestSend = '1') then
+          sNextFeState <= wait4en(sCntIn.slwEn, FIRST_CLOCK, CLOCK_FORWARD);
+        else
+          sNextFeState <= SYNCH_END;
+        end if;
+
 
       --Send the remaining clocks to the FE(s)
       when CLOCK_FORWARD =>
         if (sChCount.count <
             int2slv(cFE_CHANNELS-1, sChCount.count'length)) then
-          sNextFeState <= CLOCK_FORWARD;
+          if (sTestSend = '1') then
+            sNextFeState <= CLOCK_FORWARD;
+          else
+            sNextFeState <= SYNCH_END;
+          end if;
         else
           sNextFeState <= SYNCH_END;
         end if;
@@ -325,7 +348,11 @@ begin
         if (sDcCount.count <
                   int2slv(cFE_DAISY_CHAIN_DEPTH-1, sDcCount.count'length)) then
           --Still other FEs in the chain
-          sNextFeState <= wait4en(sCntIn.slwEn, SYNCH_END, SHIFT);
+          if (sTestSend = '1') then
+            sNextFeState <= wait4en(sCntIn.slwEn, SYNCH_END, SHIFT);
+          else
+            sNextFeState <= wait4en(sCntIn.slwEn, SYNCH_END, COMPLETE);
+          end if;
         else
           --No more FEs to readout
           sNextFeState <= wait4en(sCntIn.slwEn, SYNCH_END, COMPLETE);

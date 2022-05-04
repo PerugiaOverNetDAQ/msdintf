@@ -152,6 +152,7 @@ package FOOTpackage is
       iCNT      : in  tControlIntfIn;
       iCNT_G    : in  std_logic_vector(2 downto 0);
       iCNT_Test : in  std_logic;
+      iCNT_TEST_CH    : in std_logic_vector(7 downto 0);
       iCNT_OTHER_EDGE : in std_logic;
       oDATA_VLD : out std_logic;
       --# {{FE interface}}
@@ -195,7 +196,7 @@ package FOOTpackage is
       iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);
       iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);
       iADC_DELAY    : in  std_logic_vector(15 downto 0);
-      iCFG_FE       : in  std_logic_vector(3 downto 0);
+      iCFG_FE       : in  std_logic_vector(11 downto 0);
       iADC_FAST     : in  std_logic;
       --# {{FE Interface}}
       oFE0          : out tFpga2FeIntf;

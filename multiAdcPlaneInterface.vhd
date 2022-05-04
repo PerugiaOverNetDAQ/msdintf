@@ -31,7 +31,7 @@ entity multiAdcPlaneInterface is
     iADC_CLK_DIV  : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
     iADC_CLK_DUTY : in  std_logic_vector(15 downto 0);  --!ADC SlowClock divider
     iADC_DELAY    : in  std_logic_vector(15 downto 0);  --!Delay from the FE falling edge and the start of the AD conversion
-    iCFG_FE       : in  std_logic_vector(3 downto 0);   --!FE configurations
+    iCFG_FE       : in  std_logic_vector(11 downto 0);  --!FE configurations
     iADC_FAST     : in  std_logic;                      --!Switch to the ADC fast-data mode
     -- FE interface
     oFE0          : out tFpga2FeIntf;   --!Output signals to the FE0
@@ -53,6 +53,8 @@ architecture std of multiAdcPlaneInterface is
   signal sCntIn       : tControlIntfIn;
   signal sFifoOut     : tMultiAdcFifoOut;
   signal sFifoIn      : tMultiAdcFifoIn;
+  signal sFeTestMode  : std_logic;
+  signal sFeTestCh    : std_logic_vector(7 downto 0);
 
   signal sFe          : tFpga2FeIntf;
   signal sFeRst       : std_logic;
@@ -95,6 +97,9 @@ begin
   oFE1  <= sFe;
   oADC0 <= sAdc;
   oADC1 <= sAdc;
+
+  sFeTestMode <= iCFG_FE(8);
+  sFeTestCh   <= iCFG_FE(7 downto 0);
   ------------------------------------------------------------------------------
 
   -- Slow signals Generator ----------------------------------------------------
@@ -166,8 +171,9 @@ begin
       iRST      => sFeRst,
       oCNT      => sFeOCnt,
       iCNT      => sFeICnt,
-      iCNT_G    => iCFG_FE(2 downto 0),
-      iCNT_Test => iCFG_FE(3),
+      iCNT_G    => "000",
+      iCNT_Test => sFeTestMode,
+      iCNT_TEST_CH => sFeTestCh,
       iCNT_OTHER_EDGE => sFeOtherEdge,
       oDATA_VLD => sFeDataVld,
       oFE       => sFe,

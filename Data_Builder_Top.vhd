@@ -48,7 +48,7 @@ architecture std of Data_Builder_Top is
   --Configuration
   signal sCntOut  : tControlIntfOut;
   signal sCntIn   : tControlIntfIn;
-  signal sHpCfg   : std_logic_vector (3 downto 0);
+  signal sHpCfg   : std_logic_vector (11 downto 0);
   signal sAdcFast : std_logic;
 
   --Trigger
@@ -72,9 +72,9 @@ begin
   oCNT.compl   <= sCntOut.compl;
   oCAL_TRIG    <= sCalTrig;
 
-  sHpCfg     <= iMSD_CONFIG.cfgPlane(3 downto 0);
-  sCalTrigEn <= iMSD_CONFIG.cfgPlane(4);
-  sAdcFast   <= iMSD_CONFIG.cfgPlane(8);
+  sAdcFast   <= iMSD_CONFIG.cfgPlane(15);
+  sCalTrigEn <= iMSD_CONFIG.cfgPlane(14);
+  sHpCfg     <= iMSD_CONFIG.cfgPlane(11 downto 0);
 
   sCntIn.en     <= iEN;
   sCntIn.start  <= sTrig;
