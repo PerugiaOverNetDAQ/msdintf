@@ -109,7 +109,7 @@ begin
   oFE.G1      <= sFpga2Fe.G1;
   oFE.G2      <= sFpga2Fe.G2;
   oFE.Hold    <= not sFpga2Fe.Hold;
-  oFE.DRst    <= sFpga2Fe.DRst or iFE.initRst;
+  oFE.DRst    <= sFpga2Fe.DRst;
   oFE.ShiftIn <= not sFpga2Fe.ShiftIn;
   oFE.Clk     <= sFpga2Fe.Clk;
   oFE.TestOn  <= sFpga2Fe.TestOn;
@@ -135,7 +135,7 @@ begin
         sFpga2Fe.Hold <= '0';
       end if;
 
-      if (sFeState = RESET or (iCNT_Test = '0' and sFeState = COMPLETE)) then
+      if (sFeState = RESET) then
         sFpga2Fe.DRst <= '1';
       else
         sFpga2Fe.DRst <= '0';
