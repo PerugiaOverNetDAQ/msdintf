@@ -156,6 +156,32 @@ end component;
       oBUSY, oOUT : out std_logic;
       iDELAY : in  std_logic_vector(pWIDTH-1 downto 0));
   end component;
+  -- count_generator -----------------------------------------------------------
+  component countGenerator is
+  generic(
+    --!Counter width
+    pWIDTH    : natural := 32;
+    --!Polarity of the pulse
+    pPOLARITY : std_logic := '1'
+  );
+  port(
+    --!Main clock
+    iCLK          : in  std_logic;
+    --!Reset
+    iRST          : in  std_logic;
+    --!Enable
+    iCOUNT        : in  std_logic;
+    --!Number of occurences to count
+    iOCCURRENCES  : in  std_logic_vector(pWIDTH-1 downto 0);
+    --!Length of the pulse
+    iLENGTH       : in std_logic_vector(pWIDTH-1 downto 0);
+    --!Pulse
+    oPULSE        : out std_logic;
+    --!Output pulse flag (1 clock-cycle long)
+    oPULSE_FLAG   : out std_logic
+  );
+  end component;
+  
 
   -- Types ---------------------------------------------------------------------
   --!Counter interface with load, preset, enable and carry;
